@@ -84,6 +84,8 @@ Permission denied: requires <权限id>
 | `shell:execute` | 执行系统命令 | 危险 |
 | `filesystem:read` | 读取文件系统 | 警告 |
 | `filesystem:write` | 写入文件系统 | 危险 |
+| `download:manage` | 管理下载中心任务 | 警告 |
+| `instance:write` | 创建/修改/删除实例（含安装整合包） | 警告 |
 
 ::: tip
 「风险」用于安装详情弹窗的视觉提示：普通=蓝、警告=黄、危险=红。声明权限时遵循**最小权限原则**，只声明你真正用到的。
@@ -279,6 +281,129 @@ const ids = await __PLUGIN_API__.listWasmPlugins()   // ['dev.example.wasmplugin
 ```
 - 权限：`wasm:execute`
 
+### readText — 读取文本文件（授权制）
+
+读取指定路径的**文本**文件（UTF-8），支持分段读取。**首次访问需用户授权**（弹窗确认）。
+
+```js
+const file = await __PLUGIN_API__.call('readText', 'C:/Users/me/data.json')
+// file = { path, content: '完整文本内容' }
+
+// 从第 5 个字符开始读 100 个字符
+const seg = await __PLUGIN_API__.call('readText', 'C:/Users/me/log.txt', { start: 5, length: 100 })
+```
+- 权限：`filesystem:read`
+- 参数：`(path: string, options?: { start?: number; length?: number })`
+  - `start`：起始位置（字符），默认 0
+  - `length`：读取长度（字符），默认读到文件尾
+- 返回：`{ path, content: string }`
+- **授权机制**：首次访问未授权路径返回 403 `FS_AUTHORIZATION_REQUIRED`，启动器自动弹窗询问「是否允许插件访问该路径」，用户同意后授权（按路径前缀持久化），同插件同路径不再弹窗
+- 文件不存在 → `FS_FILE_NOT_FOUND`(404)
+
+### readBytes — 读取二进制文件（授权制）
+
+读取指定路径的**二进制**文件，返回 base64，支持分段读取。
+
+```js
+const bin = await __PLUGIN_API__.call('readBytes', 'C:/Users/me/img.png')
+// bin = { path, contentBase64: 'base64...' }
+
+// 读前 4 字节
+const head = await __PLUGIN_API__.call('readBytes', 'C:/Users/me/img.png', { start: 0, length: 4 })
+```
+- 权限：`filesystem:read`
+- 参数：`(path: string, options?: { start?: number; length?: number })`
+  - `start`：起始位置（字节），默认 0
+  - `length`：读取长度（字节），默认读到文件尾
+- 返回：`{ path, contentBase64: string }`
+- 授权机制同 `readText`
+
+### writeText — 写入文本文件（授权制）
+
+```js
+await __PLUGIN_API__.call('writeText', 'C:/Users/me/out.txt', '文件内容')
+```
+- 权限：`filesystem:write`
+- 参数：`(path: string, content: string)`，UTF-8 写入
+- 授权机制同 `readText`；自动创建父目录
+- 返回：`{ path }`
+
+### writeBytes — 写入二进制文件（授权制）
+
+```js
+await __PLUGIN_API__.call('writeBytes', 'C:/Users/me/out.bin', new Uint8Array([1,2,3]))
+```
+- 权限：`filesystem:write`
+- 参数：`(path: string, bytes: Uint8Array)`，自动转 base64 传输
+- 授权机制同 `readText`；自动创建父目录
+- 返回：`{ path }`
+
+### deleteFile — 删除文件（授权制）
+
+```js
+await __PLUGIN_API__.call('deleteFile', 'C:/Users/me/tmp.txt')
+```
+- 权限：`filesystem:write`
+- 参数：`(path: string)`，仅删除**文件**（不支持目录）
+- 授权机制同 `readText`（破坏性操作同样需授权确认）
+- 文件不存在 → `FS_FILE_NOT_FOUND`(404)
+- 返回：`{ path }`
+
+### execCommand — 执行 shell 命令
+
+执行系统命令，返回退出码与输出。**Windows 用 powershell，Linux/macOS 用 /bin/sh**。
+
+```js
+const result = await __PLUGIN_API__.call('execCommand', 'echo hello')
+// result = { exitCode: 0, stdout: 'hello\n', stderr: '' }
+
+const fail = await __PLUGIN_API__.call('execCommand', 'nonexistent-cmd')
+// fail = { exitCode: 127, stdout: '', stderr: '...' }
+```
+- 权限：`shell:execute`（**危险权限**，安装时红色提示）
+- 参数：`(command: string, timeoutMs?: number)`，`timeoutMs` 默认 15000，范围 1000–120000
+- 返回：`{ exitCode: number, stdout: string, stderr: string }`
+- 超时 → `SHELL_TIMEOUT`(400)，命令被强制终止
+- 命令为空 → `SHELL_COMMAND_REQUIRED`(400)
+
+### getSystemInfo — 读取系统信息
+
+读取启动器系统信息（OS、内存等）。
+
+```js
+const info = await __PLUGIN_API__.call('getSystemInfo')
+```
+- 权限：`system:info`
+
+### openUrl — 打开外部链接
+
+用系统默认浏览器打开外部 URL。
+
+```js
+await __PLUGIN_API__.call('openUrl', 'https://example.com')
+```
+- 权限：`system:notification`
+- 仅允许 `http://` / `https://` 协议，非法 URL 返回 400
+
+### listPlugins — 读取已安装插件列表
+
+```js
+const plugins = await __PLUGIN_API__.call('listPlugins')
+// [{ id, name, version, status }, ...]
+```
+- 权限：`plugin:list`
+
+### uploadPlugin — 安装插件
+
+上传 `.qplugin` 包安装插件。
+
+```js
+const bytes = new TextEncoder().encode('...')  // .qplugin 文件字节
+await __PLUGIN_API__.call('uploadPlugin', Array.from(bytes), 'my-plugin.qplugin')
+```
+- 权限：`plugin:install`（**危险权限**）
+- 参数：`(fileData: number[], fileName: string)`，multipart 字段名 `plugin`
+
 ### navigate — 跳转页面
 
 跳转到启动器内部路由。
@@ -445,6 +570,102 @@ __PLUGIN_API__.addMenuItem({
 - 权限：无（无需在 manifest 声明）
 - 参数：`PluginMenuItem`（同 `contributes.menuItems` 元素）
 - 插件停用时自动移除动态注册的菜单项
+
+## 下载与安装
+
+### download.addTask — 创建下载任务
+
+创建下载任务，任务自动出现在启动器「下载中心」，进度由 SSE 推送驱动，可取消。
+
+```js
+// 方式一：指定绝对目标路径
+const { taskId } = await __PLUGIN_API__.call('download.addTask', {
+  url: 'https://example.com/asset.zip',
+  targetPath: 'C:/games/instances/foo/mods/asset.zip',
+  extract: true,                 // 可选：zip 下载后自动解压并删除原包
+  headers: { 'X-Token': 'abc' }, // 可选：自定义请求头
+  name: '我的资源'                // 可选：下载中心显示名（默认 fileName）
+})
+
+// 方式二：实例 + 类别（自动解析隔离目录）
+await __PLUGIN_API__.call('download.addTask', {
+  url: 'https://.../mod.jar',
+  instanceId: 'inst-uuid',
+  category: 'mods',   // mods / resourcepacks / shaderpacks / datapacks / saves / screenshots
+  fileName: 'mod.jar'
+})
+```
+- 权限：`download:manage`
+- 返回：`{ taskId, status, targetPath }`
+- 后端复用 `DownloadSessionManager`（type `"resource"`），与 mod 下载同一条线
+
+### download.progress — 查询下载进度
+
+```js
+const snap = await __PLUGIN_API__.call('download.progress', taskId)
+// { sessionId, status, stage, progress, speed, currentFile, totalFiles, completedFiles, failedFiles, error, isPaused, instanceId }
+```
+- 权限：`download:manage`
+- `taskId` 不存在返回 `null`
+
+### download.list — 列出全部下载会话
+
+```js
+const list = await __PLUGIN_API__.call('download.list')
+```
+- 权限：`download:manage`
+- 返回：`download.progress` 同结构的快照数组
+
+### download.cancel — 取消下载
+
+```js
+await __PLUGIN_API__.call('download.cancel', taskId)
+```
+- 权限：`download:manage`
+
+### download.registerInstall — 在下载中心登记安装任务
+
+仅在前端下载中心登记一个「游戏安装」任务（type `'game'`），不创建真实下载。适合插件发起安装后让用户能在下载中心看到进度。
+
+```js
+await __PLUGIN_API__.call('download.registerInstall', {
+  instanceId: 'inst-uuid',
+  name: '我的整合包',
+  gameVersion: '1.20.1',
+  loader: 'forge',
+  loaderVersion: '47.1.0'
+})
+```
+- 权限：`instance:write`
+
+### modpack.install — 一键安装整合包
+
+直接安装整合包，走启动器**正常整合包安装流程**（与前端「整合包」页同一管线）：解析来源 → 创建实例 → 下载安装。
+
+```js
+// 方式一：本地整合包文件（.zip / .mrpack）
+const { instanceId } = await __PLUGIN_API__.call('modpack.install', {
+  id: 'MyPack',                   // 实例名（必填）
+  path: 'C:/packs/pack.zip',      // 本地整合包路径
+  gameDir: 'C:/games/instances',  // 实例根目录（必填）
+  maxMemory: 8192,                // 可选：默认 4096
+  versionIsolation: true          // 可选：版本隔离，默认 false
+})
+
+// 方式二：在线整合包（Modrinth / CurseForge / FTB）
+await __PLUGIN_API__.call('modpack.install', {
+  id: 'MyPack',
+  type: 'mr',          // mr | cf | ftb（也接受 modrinth/curseforge）
+  projectId: 'abc',    // 项目 id
+  fileId: '123',       // 版本 id
+  gameDir: 'C:/games/instances'
+})
+```
+- 权限：`instance:write`
+- 走 `POST /api/modpack/install-direct`，复用 `ModpackService`（`ParseFileAsync`/`ResolveOnlineAsync`/`InstallAsync`）与 `InstallTracker`
+- 返回：`{ instanceId }`，安装异步进行（进度在下载中心 / SSE 查看）
+- 错误码：`MODPACK_NAME_REQUIRED`、`MODPACK_GAME_DIR_REQUIRED`、`MODPACK_FILE_NOT_FOUND`、`MODPACK_SOURCE_REQUIRED`、`MODPACK_SOURCE_INVALID`
+- 需要下载中心显示安装进度时，可配合 `download.registerInstall` 登记
 
 ## 错误处理
 

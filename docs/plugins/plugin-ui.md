@@ -20,6 +20,12 @@
 .my-box { color: hsl(var(--foreground)); border: 1px solid hsl(var(--border)); }
 ```
 
+### 主题跟随机制
+
+- 插件页面/悬浮窗**自动跟随启动器明暗主题**：启动器把当前主题的 CSS 变量注入插件环境（`__qomicex_theme` postMessage 同步），明暗切换即时生效
+- 插件 body 背景为**透明**，露出启动器背景（插件容器无需自设背景色，直接使用 CSS 变量即可）
+- 主题变量在插件页面（内联/沙箱）与悬浮窗（iframe）中都可用
+
 ## 组件清单
 
 ### 卡片 Card
