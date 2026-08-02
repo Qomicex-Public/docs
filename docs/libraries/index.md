@@ -1,0 +1,9 @@
+# 前置插件文档
+
+这里收录各种前置插件（lib）的文档，供需要集成这些库的开发者查阅。每个前置插件对应一个独立页面或子目录。
+
+> 本板块介绍的是现成前置插件的使用文档，不涉及插件系统本身的开发，后者请见[插件开发指南](../plugins/)。
+
+## 前置插件列表
+
+- [MarkdownLib](./markdownlib) — Markdown 渲染库（`top.qomicex.markdown`），提供 `renderMarkdown` / `renderMarkdownInline` / `stripHtml`
