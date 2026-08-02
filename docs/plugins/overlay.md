@@ -121,5 +121,5 @@ await __PLUGIN_API__.call('overlay.destroy', overlayId)  // 销毁
 
 - 悬浮窗 HTML 内容会被启动器处理：抽离 `<style>`/`<link>` 到 head、剥壳 `<html>/<head>/<body>`、注入组件样式
 - 悬浮窗可拖拽（点击非按钮区域），`resizable: true` 时右下角可缩放（最小 200×120）
-- 关闭悬浮窗请用标题栏的 x 按钮，插件内 `destroyOverlay` 亦可
+- 关闭悬浮窗请用标题栏的 x 按钮，插件内请通过 `__PLUGIN_API__.call('overlay.destroy', id)` 销毁
 - 悬浮窗脚本出错不影响主界面；如需调试，关注 DevTools 控制台

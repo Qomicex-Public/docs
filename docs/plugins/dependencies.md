@@ -64,11 +64,12 @@ try {
 
 ::: warning
 库插件的 `layers` 用纯 `["l3"]`（内联）或 `["l2", "l3"]`（沙箱）均可。要点：
-- 内联（`["l3"]`）：插件激活加载时脚本立即执行并注册方法，但 **installed 状态不会自动激活**，需用户手动启用一次后才随启动激活
-- 含 `l2`（如 `["l2","l3"]`）：随启动自动激活，无需手动启用
+- 激活取决于 `entry.frontend` 是否存在 + 用户是否启用，与 layers 无关
+- 必须声明 `entry.frontend`：只有声明了 frontend 的插件才会被激活（从而执行脚本、注册方法）。省略 frontend 的插件不会被激活，方法也就无法注册
 见 [layers 图层定义](./manifest#layers-图层定义)。
+:::
 ::: warning
-库插件的 `layers` 不要用纯 `["l3"]` —— 纯 l3 的 installed 插件**不会自动激活**，方法将无法注册，导致依赖方 `callPlugin` 失败。请使用 `["l2", "l3"]`（见 [layers 图层定义](./manifest#layers-图层定义)）。
+库插件**必须有 `entry.frontend`**。只有声明了 frontend 的插件才会被激活（从而执行脚本、注册方法）。省略 frontend 的插件不会被激活，方法也就无法注册。
 :::
 
 ::: warning

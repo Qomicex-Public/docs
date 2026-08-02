@@ -19,7 +19,7 @@ const iconUrl = `${__PLUGIN_API_BASE__}/dist/icon.svg`
 document.getElementById('icon').src = iconUrl
 ```
 
-内联渲染（无 `l2`）时该变量不存在，相对路径可直接使用。
+内联渲染（无 `l2`）和悬浮窗（overlay iframe）时该变量不存在，相对路径需通过其他方式解析。
 
 ## 调用方式
 
@@ -142,6 +142,7 @@ const result = await __PLUGIN_API__.call('callBackend', '/resource-download/star
 - 权限：`network:fetch`
 - 参数：`(endpoint: string, data?: any)`
   - 有 `data` → POST；无 `data` → GET
+  - `data` 对象中可传入 `_method` 字段覆盖 HTTP 方法（如 `{ _method: 'PUT', State: 'active' }`），`_method` 不会被发送到后端
   - `endpoint` 以 `/` 开头（如 `/instance`），不含 `/api` 前缀
 - 返回：后端 JSON 响应；非 2xx 抛错
 - 可用端点清单：见启动器后端 OpenAPI（开发模式 `/openapi/v1.json`），常用如 `/instance`、`/resources/search`、`/settings` 等
@@ -371,6 +372,79 @@ await __PLUGIN_API__.call('overlay.setHtml', overlayId, '<p>新内容</p>')
 await __PLUGIN_API__.call('overlay.setPosition', overlayId, 300, 200)
 ```
 - 权限：`ui:sub_window`
+
+### uploadPlugin — 安装插件
+
+上传 `.qplugin` 文件安装插件。
+
+```js
+const result = await __PLUGIN_API__.call('uploadPlugin', fileData, 'my-plugin.qplugin')
+```
+- 权限：`plugin:install`
+- 参数：`(fileData: ArrayBuffer | Uint8Array, fileName: string)`
+
+### readText — 读取文本文件
+
+读取文件系统上的文本文件。
+
+```js
+const content = await __PLUGIN_API__.call('readText', '/path/to/file.txt')
+```
+- 权限：`filesystem:read`
+- 参数：`(path: string, options?: { encoding?: string })`
+
+### readBytes — 读取二进制文件
+
+读取文件系统上的二进制文件，返回 `Uint8Array`。
+
+```js
+const bytes = await __PLUGIN_API__.call('readBytes', '/path/to/file.bin')
+```
+- 权限：`filesystem:read`
+- 参数：`(path: string)`
+
+### writeText — 写入文本文件
+
+```js
+await __PLUGIN_API__.call('writeText', '/path/to/file.txt', 'hello world')
+```
+- 权限：`filesystem:write`
+- 参数：`(path: string, content: string)`
+
+### writeBytes — 写入二进制文件
+
+```js
+await __PLUGIN_API__.call('writeBytes', '/path/to/file.bin', new Uint8Array([1, 2, 3]))
+```
+- 权限：`filesystem:write`
+- 参数：`(path: string, bytes: Uint8Array)`
+
+### execCommand — 执行系统命令
+
+执行系统命令，返回标准输出。
+
+```js
+const result = await __PLUGIN_API__.call('execCommand', 'ls -la', 30000)
+// { stdout: '...', stderr: '...', exitCode: 0 }
+```
+- 权限：`shell:execute`
+- 参数：`(command: string, timeoutMs?: number)`，`timeoutMs` 默认 30000
+
+### addMenuItem — 动态注册侧边栏菜单项
+
+运行时动态向侧边栏添加菜单项，无需修改 manifest。
+
+```js
+__PLUGIN_API__.addMenuItem({
+  path: '/plugins/p/xxx',
+  label: '动态菜单',
+  icon: '🤖',
+  action: 'page'
+})
+```
+- 权限：无（无需在 manifest 声明）
+- 参数：`PluginMenuItem`（同 `contributes.menuItems` 元素）
+- 插件停用时自动移除动态注册的菜单项
 
 ## 错误处理
 

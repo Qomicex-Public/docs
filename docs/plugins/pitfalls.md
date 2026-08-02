@@ -71,9 +71,9 @@ await __PLUGIN_API__.proxyFetchStream(req, {
 
 `activatePlugin` 只在 `entry.frontend` 存在时才激活插件（渲染、注册方法、标记 active）。**省略 frontend 的插件不会被激活**，方法无法注册。库插件即使不做 UI 也需提供一个空页面。
 
-### 纯 l3 图层不自动激活
+### 激活取决于 entry.frontend，而非 layers
 
-manifest `layers` 若全部为 `l3`，`installed` 状态的插件**不会自动激活**（需用户手动启用）。库插件若想"装上即用"，注意这一行为，或引导用户启用。
+插件安装后初始状态为 `installed`，实际激活取决于两点：① `entry.frontend` 存在（`activatePlugin` 仅在 `entry.frontend` 存在时才渲染并标记 `active`）；② 用户在插件列表中启用。与 `layers` 声明无关——纯 `["l3"]` 插件若有 `entry.frontend` 照样会激活（走内联渲染）。
 
 ### 激活顺序已自动处理
 
@@ -87,7 +87,7 @@ manifest `layers` 若全部为 `l3`，`installed` 状态的插件**不会自动�
 
 - `minLauncherVersion` 当前**未校验**，但请填写以兼容未来
 - 后端对 `permissions` 仅存储不校验；**前端运行时**按 `METHOD_PERMISSIONS` 表校验，manifest 缺权限 → API 调用报 `Permission denied`
-- `contributes.commands` / `downloadSources` / `settingsPages` 当前**未使用**，勿依赖
+- `contributes.commands` 用于注册键盘快捷键（如 `devtools:toggle`），见 `PluginEventBridge.tsx`；`downloadSources` / `settingsPages` 当前**未使用**，勿依赖
 - 安装接口（upload）不做依赖检查；目录安装（install）才检查必装依赖
 
 ## 后端行为

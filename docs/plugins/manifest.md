@@ -130,7 +130,7 @@
 - **L2 脚本层已实现**：声明 `l2` 的插件走 **iframe 沙箱**（`<iframe sandbox="allow-scripts">` + postMessage 桥），与主界面隔离；不声明 `l2` 的插件走内联渲染（与主界面同上下文）
   - L2 沙箱内同样支持全部 `__PLUGIN_API__` 方法、`.p-*` 组件样式、`registerMethod`/`callPlugin`（跨窗口中转）
   - 沙箱插件脚本随 `srcdoc` 解析自动执行，无需进入页面
-- **纯 L3 的插件不自动激活**：若 `layers` 全部为 `l3`，插件处于 `installed` 状态时不会自动启用（需用户手动打开开关），而含 L2 等其它层级的插件会随启动自动激活
+- **插件激活条件**：插件安装后初始状态为 `installed`，实际激活取决于两点：① `entry.frontend` 存在（`activatePlugin` 仅在 `entry.frontend` 存在时才渲染并标记 `active`）；② 用户在插件列表中启用。与 `layers` 声明无关——纯 `["l3"]` 插件若有 `entry.frontend` 照样会激活（走内联渲染）。
 - **L2 沙箱与内联的差异**：
   | 维度 | L2 iframe 沙箱 | 内联渲染 |
   |------|----------------|---------|
