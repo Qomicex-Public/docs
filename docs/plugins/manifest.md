@@ -77,8 +77,25 @@
 |------|------|------|
 | `path` | string | 入口目标路径（页面路由，如 `/plugins/p/:id`） |
 | `label` | string | 入口显示文字 |
-| `icon` | string | 入口图标（首个字符或文本） |
+| `icon` | string | 入口图标。支持三种写法：① emoji / 纯文本（如 `"🛠"`、`"A"`）；② 绝对 URL（如 `"https://example.com/icon.png"`）；③ 包内相对路径（如 `"dist/icon.svg"`，启动器会自动解析为文件地址） |
 | `action` | string | `"page"`（默认，跳转页面）或 `"overlay"`（打开悬浮窗，需配合 `overlay` 配置） |
+
+### icon 写法示例
+
+```json
+// ① emoji / 纯文本
+{ "path": "/plugins/p/xxx", "label": "AI 助手", "icon": "🤖" }
+
+// ② 绝对 URL
+{ "path": "/plugins/p/xxx", "label": "AI 助手", "icon": "https://example.com/icon.png" }
+
+// ③ 包内相对路径（推荐）
+// 文件放在插件包 dist/icon.png，manifest 写相对路径
+{ "path": "/plugins/p/xxx", "label": "AI 助手", "icon": "dist/icon.png" }
+```
+
+包内相对路径会被启动器自动解析为 `http://localhost:5000/api/plugins/{id}/files/dist/icon.png`，无需插件侧额外处理。
+
 
 ### overlay 对象
 

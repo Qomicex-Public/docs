@@ -2,6 +2,25 @@
 
 插件脚本通过全局对象 `window.__PLUGIN_API__` 与启动器交互。本文档列出全部可调用方法、签名、权限要求与示例。
 
+## 全局变量
+
+### __PLUGIN_API_BASE__ — 插件文件地址前缀
+
+L2 沙箱内，启动器会自动注入 `window.__PLUGIN_API_BASE__`，值为当前插件的文件访问基地址：
+
+```
+http://localhost:5000/api/plugins/{插件ID}/files
+```
+
+可用于动态拼包内资源地址（如图标、图片）：
+
+```js
+const iconUrl = `${__PLUGIN_API_BASE__}/dist/icon.svg`
+document.getElementById('icon').src = iconUrl
+```
+
+内联渲染（无 `l2`）时该变量不存在，相对路径可直接使用。
+
 ## 调用方式
 
 ```js
@@ -54,6 +73,7 @@ Permission denied: requires <权限id>
 | `clipboard:write` | 写入剪贴板 | 警告 |
 | `wasm:execute` | 执行 WASM 模块 | 警告 |
 | `plugin:install` | 安装/卸载/更新插件 | 危险 |
+| `plugin:list` | 读取已安装插件列表 | 普通 |
 | `resource:read` | 读取游戏资源文件 | 普通 |
 | `resource:write` | 写入游戏资源文件 | 警告 |
 | `java:manage` | 管理 Java 运行时 | 警告 |
@@ -277,6 +297,39 @@ await __PLUGIN_API__.call('showToast', '操作成功', 'success')
 ```
 - 权限：`ui:toast`
 - 参数：`(message: string, type?: 'info' | 'error' | 'success')`，默认 `info`
+
+### getSystemInfo — 读取系统与启动器信息
+
+读取操作系统、启动器与内存信息，可用于 `minLauncherVersion` 兼容检查或运行时判断平台。
+
+```js
+const info = await __PLUGIN_API__.call('getSystemInfo')
+// { Os: 'windows'|'linux'|'osx', Architecture, OsName, OsVersion, OsVersionId, OsDisplayName, GitCommit, Memory, AvailableMemory }
+```
+- 权限：`system:info`
+- 后台走 `GET /api/systeminfo`（与 `/api/system/info` 等价）
+- `GitCommit` 为启动器 Git 提交哈希；`Memory` / `AvailableMemory` 为字节数
+
+### openUrl — 用系统浏览器打开外部链接
+
+L2 沙箱内 `window.open` 会被 `sandbox` 拦截，请用此方法打开外链。
+
+```js
+await __PLUGIN_API__.call('openUrl', 'https://example.com')
+```
+- 权限：`system:notification`
+- 后台走 `POST /api/system/open-url`，仅接受 `http://` / `https://`
+
+### listPlugins — 列出已安装插件
+
+返回已安装插件列表（id/name/version/状态），可用于依赖检测或商店联动。
+
+```js
+const plugins = await __PLUGIN_API__.call('listPlugins')
+// [{ id, name, version, status }, ...]  status: 'installed'|'active'|'disabled'
+```
+- 权限：`plugin:list`
+- 后台走 `GET /api/plugins/`
 
 ### overlay.create — 创建悬浮窗
 
