@@ -102,3 +102,66 @@ my-wasm-plugin.qplugin（即 zip）
 - `minLauncherVersion` 建议填写，虽然当前版本未强制校验
 - 插件 API 可能演进，发布时说明兼容的启动器版本范围
 - 重大变更（方法签名、权限变化）建议递增主版本
+
+## 九、上传到插件商店（提 PR）
+
+插件商店数据由仓库 [Qomicex-Public/Qomicex.Plugin-Market](https://github.com/Qomicex-Public/Qomicex.Plugin-Market) 的 `repository` 分支维护：`plugins.json` 保存插件元数据，`packages/` 存放 `.qplugin` 安装包。上传即向该分支提交 PR。
+
+### 步骤
+
+1. **打包**：按上文规范生成 `.qplugin`，包文件名建议用 `{插件id}.qplugin`（如 `top.qomicex.assistant.qplugin`）
+2. **Fork 商店仓库**：fork `Qomicex.Plugin-Market`，切换到 `repository` 分支
+3. **放入安装包**：把 `.qplugin` 复制到仓库 `packages/` 目录
+4. **更新 plugins.json**：在 `plugins` 数组添加（或更新）你的插件条目，字段如下：
+
+```json
+{
+  "id": "top.qomicex.assistant",
+  "name": "AI 助手",
+  "description": "一句话介绍插件功能",
+  "author": "你的名字或组织",
+  "type": "library",
+  "icon": "fa-solid fa-robot",
+  "version": "1.1.4",
+  "minLauncherVersion": "0.1.0",
+  "permissions": ["config:read", "config:write", "network:fetch"],
+  "tags": ["工具", "AI"],
+  "downloadUrl": "https://raw.githubusercontent.com/Qomicex-Public/Qomicex.Plugin-Market/repository/packages/top.qomicex.assistant.qplugin"
+}
+```
+
+字段说明：
+
+| 字段 | 说明 |
+|------|------|
+| `id` | 插件 id，与 manifest 一致，一经发布不更改 |
+| `name` | 显示名 |
+| `description` | 功能简介（商店卡片展示） |
+| `author` | 作者/组织 |
+| `type` | 可选；库插件标 `library` |
+| `icon` | 图标：emoji / 绝对 URL / 包内路径 / **FontAwesome 类名**（如 `fa-solid fa-robot`，随主题） |
+| `version` | 版本号，与 manifest 一致、语义化递增 |
+| `permissions` | 安装时展示的权限列表，尽量与 manifest 一致 |
+| `tags` | 分类标签 |
+| `downloadUrl` | 安装包下载地址（见下） |
+
+5. **提交 PR**：push 到你的 fork，向 `Qomicex-Public/Qomicex.Plugin-Market` 的 `repository` 分支提交 PR，说明新增/更新的插件、版本与改动
+6. **合并后**：插件商店即可检索到该插件，用户可直接安装
+
+### downloadUrl 规则
+
+```
+https://raw.githubusercontent.com/Qomicex-Public/Qomicex.Plugin-Market/repository/packages/{文件名}.qplugin
+```
+
+文件名须与 `packages/` 目录下的实际文件一致。
+
+::: warning
+- 更新插件时必须**同时**更新两处：`plugins.json` 里的 `version` + `packages/` 下的 `.qplugin`，缺一不可
+- 版本号要语义化递增（商店与启动器依赖匹配都依赖它）
+- 同名 `id` 会被当作同一插件覆盖，不要重复新增条目
+:::
+
+::: tip 官方插件结构参考
+官方插件采用「源码仓库 + 商店发布」分离：插件代码在各自的仓库（如 `Qomicex.Plugin-AI.Assistant`），商店只放打包产物 `.qplugin` 与 `plugins.json` 元数据。个人插件可简化——直接把 `.qplugin` 与 `plugins.json` 提交到 fork 的商店仓库即可。
+:::

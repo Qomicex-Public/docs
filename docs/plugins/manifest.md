@@ -96,6 +96,25 @@
 
 包内相对路径会被启动器自动解析为 `http://localhost:5000/api/plugins/{id}/files/dist/icon.png`，无需插件侧额外处理。
 
+### 顶层 icon（库插件图标）
+
+`icon` 除了写在 `menuItems[].icon`，也支持写在 manifest **顶层**，供没有 `contributes.menuItems` 的库插件在**插件管理/列表**里显示图标：
+
+```json
+{
+  "id": "top.qomicex.markdown",
+  "name": "MarkdownLib",
+  "icon": "fa-solid fa-file-lines",
+  "layers": ["l3"],
+  "entry": { "frontend": "dist/index.html" }
+}
+```
+
+- 支持写法与 `menuItems[].icon` 一致（emoji / 绝对 URL / 包内相对路径 / **FontAwesome 类名**）
+- 插件管理卡片读取顺序：`contributes.menuItems[0].icon ?? manifest.icon`
+- **库插件建议用顶层 `icon`**，不要声明 `contributes.menuItems`（会创建侧边栏入口）
+- 图标尽量用 FontAwesome 类名（如 `fa-solid fa-file-lines`、`fa-brands fa-markdown`，需在启动器 `BuiltinIcons.tsx` 预置列表内）：SVG 路径经 `<img>` 渲染固定黑色不随主题，FA 类名随明暗主题
+
 
 ### overlay 对象
 

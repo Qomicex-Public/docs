@@ -63,7 +63,7 @@ await __PLUGIN_API__.proxyFetchStream(req, {
 ### 相对路径 vs 绝对 URL
 
 - 插件文件（HTML/JS/CSS）里的相对资源路径会被重写为 `{API_BASE}/plugins/{id}/files/...`，**不要硬编码 `/api/plugins/...` 相对路径**（打包后无 Vite proxy）
-- 外部资源（CDN 脚本、图片）用完整 `https://` URL
+- 外部 CDN 资源受 CSP 限制：**图片/字体**可用完整 `https://` URL；**CSS/JS 会被拦截**，必须随包分发（详见 [CSP 资源放行对照表](#csp-资源放行对照表当前启动器默认值)）
 
 ## 依赖与激活
 
@@ -103,3 +103,135 @@ await __PLUGIN_API__.proxyFetchStream(req, {
 - API 调用失败信息会在控制台输出（`[API]` 前缀），含状态码与错误码
 - 检查插件是否真的激活：插件列表的状态；已激活插件 `state === 'active'`
 - 检查依赖：`sortByDependencies` 会跳过缺失依赖并 warn 日志
+
+## 环境与构建避坑（实战）
+
+### Tauri/WebView2 框架环境（与普通浏览器不同）
+
+插件运行在 Tauri（WebView2，Chromium 内核）里，**不是普通浏览器**，环境差异直接影响"哪些资源能用"：
+
+| 维度 | 普通浏览器 | 启动器插件环境 |
+|------|-----------|---------------|
+| 页面 origin | `https://...` | `tauri://localhost`（release）/ `http://localhost:1420`（dev） |
+| 后端 API / 插件资源 | — | `http://localhost:5000`（插件文件与 API 都从这取） |
+| 外部网络 | 自由 | 经插件 API `proxyFetch`（后端代理，自带 SSRF 防护） |
+| 本地文件 | 受限 | 用插件文件 API（`readText`/`readBytes` 等） |
+| CSP | 站点自定 | **Tauri 在 release 注入固定 CSP**；dev 不注入 |
+
+**dev 与 release 的关键差异（最常见翻车点）：**
+
+- `npm run tauri dev` / 纯浏览器预览：**无 CSP**，外部 CDN 的 CSS/JS 能自由加载 → 很多问题 dev 里测不出来
+- **release 安装包**：Tauri 注入 CSP，外部资源按 CSP 拦截 → 常见的"dev 正常、release 白板 / 缺样式 / 图标不显示 / worker 失效"几乎都是这个原因
+
+### CSP 资源放行对照表（当前启动器默认值）
+
+| 指令 | 放行内容 | 对插件的影响 |
+|------|---------|-------------|
+| `script-src` | `'self' 'unsafe-inline' 'wasm-unsafe-eval' http://localhost:5000 blob: data:` | 后端 JS、内联 `<script>`、blob/data worker、wasm 可用；**外部 CDN `<script src="https://...">` 被拦截** |
+| `worker-src` | `'self' blob: data:` | Web Worker（pdf.js 等）可用 |
+| `connect-src` | `'self' http://localhost:5000 ws://localhost:5000 https://api.github.com blob: data:` | 后端 API、GitHub API、fetch blob/data 可用 |
+| `img-src` | `'self' blob: asset: http://localhost:5000 data: https:` | 后端图片、CDN 图片（https:）可用 |
+| `style-src` | `'self' 'unsafe-inline' http://localhost:5000` | 内联 `<style>`、后端 CSS 可用；**外部 CDN `<link rel="stylesheet">`（https:）被拦截** |
+| `font-src` | `'self' data: https:` | base64 内联与 CDN 字体（https:）可用 |
+| `frame-src` | `'self' blob:` | 悬浮窗（blob URL）可用；**外部网页 `<iframe>`（https:）被拦截** |
+| `media-src` | `'self' asset:` | 本地媒体资产 |
+
+**由此得出的插件开发结论：**
+
+1. **插件自己的 CSS/JS 必须随包分发**，从后端 `http://localhost:5000/api/plugins/{id}/files/...` 加载，**不要用 CDN** 的 `<link rel="stylesheet">` 或 `<script src="https://...">`——release 里会被拦截
+2. 外部 CDN 只能用于**图片**（`img-src` 含 `https:`）和**字体**（`font-src` 含 `https:`）
+3. 图标字体若走 CDN 的 `<link>`，其 CSS 会被 `style-src` 拦截；应**内联字体 CSS**（`@font-face` + base64）或把字体文件随包放后端
+4. 需要 iframe 嵌外部网页 → 被 `frame-src` 拦截；改用 `proxyFetch` 取内容渲染，或用悬浮窗（blob URL）
+5. 依赖外部脚本（如 CDN 的库）→ 下载后随包分发，从后端加载
+6. 远程 API 一律走 `proxyFetch`（后端代理），不要直接跨域 `fetch`（CORS 失败且被 SSRF 防护兜底）
+
+### 资源被拦截的排查方法
+
+- 启动器 DevTools（Ctrl+Shift+I）控制台：搜 `Refused to load` / `violates ... Content Security Policy`
+- 直接访问 `http://localhost:5000/api/plugins/{id}/files/{path}` 确认资源可达：若 404 是路径问题；若 200 但仍不显示 → 几乎都是 CSP 拦截
+- **dev 正常 + release 异常 → 优先怀疑 CSP**（dev 无 CSP）
+- 插件页面空白但控制台无 JS 报错 → 查 `#root` 是否有内容；空则 JS 未加载（`script-src`），有内容但无样式 → CSS 被拦（`style-src`）
+
+### Tauri/WebView2 的 blob:/data:/worker 加载
+
+启动器（Tauri + WebView2）的 CSP **默认已放行** `blob:`、`data:`、`'wasm-unsafe-eval'`（`script-src` / `worker-src` / `connect-src`），因此 `new Worker(blobUrl)`、`import(blobUrl)`、pdf.js（module worker）等默认可用。
+
+::: warning 自定义/收紧 CSP 时必须保留
+若自行替换启动器 CSP，**以下放行缺一不可**，否则 release 包中插件会出问题：
+- `script-src` 需含 `'unsafe-inline' http://localhost:5000 blob: data: 'wasm-unsafe-eval'`
+- `worker-src` 需含 `blob: data:`
+- `connect-src` 需含 `http://localhost:5000 ws://localhost:5000 blob: data:`
+- `style-src` 需含 `http://localhost:5000`（缺失 → 插件页面**完全无样式**，见下一节）
+- `font-src` 需含 `https:`（CDN 图标字体）
+- `frame-src` 需含 `blob:`（悬浮窗/overlay 用 blob URL）
+:::
+
+历史背景：旧版 CSP 未放行 `blob:`/`data:`，`new Worker(blobUrl)`、`import(blobUrl)` 会失败（报 `Cannot load script at: blob:...`），依赖 Web Worker 的库（如 pdf.js v4）不可用。若确实无法放行，备选方案是把 worker 代码内联进主 bundle，运行时用 `data:text/javascript;base64,...` 作 `workerSrc`（pdf.js 需配合 classic worker 版本）。
+
+### release 包里插件页面完全无样式（白板）
+
+**现象**：`npm run tauri dev` 里插件样式正常，但打包成 release（安装包）后插件页面变白板/无样式、文字堆叠、无卡片背景。
+
+**根因**：Tauri 在 release 构建时向 WebView 注入 CSP（dev 模式**不**注入，所以 dev 正常）。若 CSP 的 `style-src` 未放行插件资源所在的后端地址（`http://localhost:5000`），插件 `<link rel="stylesheet" href=".../files/assets/index.css">` 会被 CSP 拦截。控制台报 `Refused to load the stylesheet ... violates ... "style-src"`。JS 通常不受影响（`script-src` 已含 5000），所以页面"有布局、无样式"。
+
+**解决**：启动器 CSP 的 `style-src` 必须包含后端地址，当前启动器已默认含 `http://localhost:5000`。插件侧无需改动。
+
+**排查**：dev 正常 + release 白板 → 优先怀疑 CSP；打开启动器 DevTools（Ctrl+Shift+I）控制台查 `Refused to load the stylesheet` 报错。
+
+### 目录源（registry）避免走 GitHub raw
+
+**现象**：插件商店列表空白 / 报 `HTTP 499`。
+
+**根因**：目录源用 `raw.githubusercontent.com`，国内被墙/极慢，后端 `proxyFetch` 15s 超时后返回 499（`TaskCanceledException`）。
+
+**解决**：目录源改用 **GitHub contents API**（`api.github.com`，国内可达）：
+
+```
+https://api.github.com/repos/{owner}/{repo}/contents/{path}?ref={branch}
+```
+
+响应体为 `{ "content": "<base64>", "encoding": "base64" }`，需 base64 解码（浏览器 `atob` + `TextDecoder`）后再解析 JSON。
+
+- 商店插件（`top.qomicex.market`）v1.0.1 起已默认走 GitHub API
+- 注意 GitHub 未认证 API 速率限制（60 次/小时），目录拉取不宜过频繁
+
+### 内联 bundle 注入 HTML 前的危险序列
+
+把打包后的 JS 内联进 `<script>...</script>` 时，若 JS 里含 `<!--`、`-->`、`<script`、`</script>`，HTML 解析器会进入 **script escaped / double-escaped 状态**，可能提前结束 `<script>` 或吞掉后续内容，导致 JS 截断、方法未注册。
+
+注入前必须转义（JS 里 unicode 转义运行时还原，语义不变）：
+
+```js
+const js = bundle
+  .replace(/<!--/g, '<\\u0021--')
+  .replace(/-->/g, '--\\u003e')
+  .replace(/<script/gi, '\\u003cscript')
+  .replace(/<\/script>/g, '<\\/script>')
+```
+
+### 字符串模板注入别用 String.replace
+
+`tpl.replace('<!--占位符-->', '<script>' + js + '</script>')` 会展开 replacement 里的 **`$` 模式**（`$&`、`$'`、`` $` ``、`$1` 等），污染注入的 JS。典型事故：bundle 内 xlsx 库的 `"0$&"` 会被展开成占位符文本，整个 bundle 损坏、`registerMethod` 未注册。
+
+用 `split().join()` 替代，不做任何替换展开：
+
+```js
+const html = tpl.split('<!--占位符-->').join('<script>' + js + '</script>')
+```
+
+### 插件管理/列表图标：库插件用顶层 `manifest.icon`
+
+- 插件管理卡片的图标读取顺序为 `contributes.menuItems[0].icon ?? manifest.icon`
+- **库插件要显示图标，用 manifest 顶层 `"icon": "fa-solid fa-file-lines"`**，不要声明 `contributes.menuItems`（会创建侧边栏入口，并可能把插件页面渲染出来）
+- 图标尽量用 **FontAwesome 类名**（`fa-solid fa-xxx`，启动器预置列表见 `BuiltinIcons.tsx`）：SVG 路径经 `<img>` 渲染固定黑色、不随明暗主题；FA 类名经 `<FontAwesomeIcon>` 随主题
+- 需要新的 FA 图标时，在启动器 `BuiltinIcons.tsx` 的 `byClass` 里加条目（含 `fa-brands` 如 `fa-markdown`）
+
+### 文件拖放拿不到本地路径
+
+- Tauri 默认 `dragDropEnabled` 会拦截系统文件拖放，**前端原生 `drop` 事件的 `File` 对象拿不到 `.path`**（也常收不到 drop）
+- 需要启动器 Rust 侧监听 `window.on_window_event`，匹配 `WindowEvent::DragDrop::Drop { paths, .. }`，再 `emit("file-drop", paths)` 到前端
+- 前端（含需要此能力的插件）用 `@tauri-apps/api/event` 的 `listen('file-drop')` 接收绝对路径数组；插件 iframe 需由主界面前端经 `callPlugin` 转发
+
+### 文件读取 API 是 readText / readBytes，不是 readFile
+
+插件桥的文件读取方法名是 **`readText`**（UTF-8 文本，返回 `{ content }`）和 **`readBytes`**（二进制，返回 `{ contentBase64 }`），权限 `filesystem:read`。不存在 `readFile` 方法，用错会报 `Unknown method: readFile`。写入为 `writeText` / `writeBytes`，删除为 `deleteFile`。

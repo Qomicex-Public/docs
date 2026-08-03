@@ -7,3 +7,4 @@
 ## 前置插件列表
 
 - [MarkdownLib](./markdownlib) — Markdown 渲染库（`top.qomicex.markdown`），提供 `renderMarkdown` / `renderMarkdownInline` / `stripHtml`
+- [MarkItDown](./markitdown) — 文档转 Markdown 库（`top.qomicex.markitdown`），提供 `convertFile`，供 AI 助手解析 PDF / Word / Excel / PPT / 图片 / 音频

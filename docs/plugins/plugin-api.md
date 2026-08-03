@@ -430,11 +430,35 @@ await __PLUGIN_API__.call('showToast', '操作成功', 'success')
 
 ```js
 const info = await __PLUGIN_API__.call('getSystemInfo')
-// { Os: 'windows'|'linux'|'osx', Architecture, OsName, OsVersion, OsVersionId, OsDisplayName, GitCommit, Memory, AvailableMemory }
+// { Os, Architecture, OsName, OsVersion, OsVersionId, OsDisplayName, GitCommit,
+//   Memory, AvailableMemory,
+//   LauncherName, LauncherVersion, VersionType, Developers, CoreDependencies }
 ```
 - 权限：`system:info`
 - 后台走 `GET /api/systeminfo`（与 `/api/system/info` 等价）
 - `GitCommit` 为启动器 Git 提交哈希；`Memory` / `AvailableMemory` 为字节数
+- 启动器元信息字段：
+  - `LauncherName`：启动器名称（如 `Qomicex Launcher`）
+  - `LauncherVersion`：启动器版本号（程序集版本，如 `0.1.1`）
+  - `VersionType`：版本类型，按版本号预发布标签动态判断（`alpha` / `beta` / `rc` / `dev`，否则 `stable`）
+  - `Developers`：`[{ name, role }]` 开发者列表
+  - `CoreDependencies`：`[{ name, version, license }]` 核心库列表（.NET / Tauri / Rust / Qomicex.Core 等）
+
+### 文件拖放事件（file-drop）
+
+把文件拖入启动器窗口时，主窗口广播 `file-drop` 事件，payload 为拖入文件的**绝对路径数组**。前端（主界面）可用 `@tauri-apps/api/event` 监听：
+
+```js
+import { listen } from '@tauri-apps/api/event'
+listen<string[]>('file-drop', (event) => {
+  const paths = event.payload   // 例如 ['C:/Users/me/a.pdf', 'D:/b.docx']
+})
+```
+
+- 由启动器 Rust `WindowEvent::DragDrop::Drop { paths, .. }` 触发（`dragDropEnabled` 开启时）
+- 路径为系统绝对路径，适合"拖文件自动填入路径"等交互
+- **注意**：前端原生 `drop` 事件的 `File` 对象拿不到 `.path`（Tauri 拦截系统拖放），必须走该事件
+- L2 沙箱插件如需使用：由主界面前端监听后经 `__pluginRegistry.call(pluginId, '方法', [paths])` / `callPlugin` 转发，插件侧 `registerMethod` 接收
 
 ### openUrl — 用系统浏览器打开外部链接
 

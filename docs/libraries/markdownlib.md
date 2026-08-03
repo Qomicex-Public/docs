@@ -3,7 +3,7 @@
 > MarkdownLib 是一个把 Markdown 解析能力封装成前置插件的库，任何插件都可以通过 `callPlugin` 调用它，把 Markdown 文本渲染成 HTML。
 
 - **插件 ID**：`top.qomicex.markdown`
-- **版本**：`1.2.0`
+- **版本**：`1.2.1`
 - **依赖**：无
 - **引入**：内嵌 `marked v15.0.12`，无外部 CDN 依赖（不受 Tauri CSP 限制）
 
