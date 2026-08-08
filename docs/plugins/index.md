@@ -26,6 +26,7 @@ Qomicex 插件（`.qplugin`）本质是一个 **ZIP 压缩包**，内含一份 `
 ## 目录
 
 - [从零开始开发第一个插件](./creating-plugin)
+- [React + Vite 插件开发](./react-plugin)
 - [manifest 清单详解](./manifest)
 - [插件 API 完整参考](./plugin-api)
 - [UI 组件库（.p-* 样式）](./plugin-ui)

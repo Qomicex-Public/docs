@@ -38,6 +38,7 @@ export default defineConfig({
           items: [
             { text: '插件开发概览', link: '/plugins/' },
             { text: '从零开发第一个插件', link: '/plugins/creating-plugin' },
+            { text: 'React + Vite 插件开发', link: '/plugins/react-plugin' },
             { text: 'manifest 清单详解', link: '/plugins/manifest' },
             { text: '插件 API 完整参考', link: '/plugins/plugin-api' },
             { text: 'UI 组件库（.p-* 样式）', link: '/plugins/plugin-ui' },
