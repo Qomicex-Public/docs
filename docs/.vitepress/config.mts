@@ -11,7 +11,8 @@ export default defineConfig({
     generateDocsIndex(siteConfig.srcDir, siteConfig.outDir, {
       guide: '使用指南',
       plugins: '插件开发',
-      libraries: '前置插件文档'
+      libraries: '前置插件文档',
+      store: '插件商店'
     })
   },
   themeConfig: {
@@ -20,7 +21,8 @@ export default defineConfig({
     nav: [
       { text: '指南', link: '/guide/' },
       { text: '插件开发', link: '/plugins/' },
-      { text: '前置插件', link: '/libraries/' }
+      { text: '前置插件', link: '/libraries/' },
+      { text: '插件商店', link: '/store/' }
     ],
     sidebar: {
       '/guide/': [
@@ -57,6 +59,12 @@ export default defineConfig({
             { text: '概览', link: '/libraries/' },
             { text: 'MarkdownLib', link: '/libraries/markdownlib' }
           ]
+        }
+      ],
+      '/store/': [
+        {
+          text: '插件商店',
+          items: [{ text: 'API 参考', link: '/store/' }]
         }
       ]
     },

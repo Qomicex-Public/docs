@@ -5,3 +5,4 @@
 ## 内容
 
 - [快速上手](./getting-started)
+- [下载镜像](./mirror)
