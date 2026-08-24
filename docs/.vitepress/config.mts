@@ -64,7 +64,10 @@ export default defineConfig({
       '/store/': [
         {
           text: '插件商店',
-          items: [{ text: 'API 参考', link: '/store/' }]
+          items: [
+            { text: '发布与打包', link: '/store/publish' },
+            { text: 'API 参考', link: '/store/' }
+          ]
         }
       ]
     },

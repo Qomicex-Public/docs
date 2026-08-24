@@ -83,6 +83,16 @@ Qomicex Launcher 插件商店（`plugins.qomicex.top`）后端 API 规格，供�
 | POST | `/auth/verification-request` | 🔒 | 申请组织/官方认证 `{targetLevel:'organization'\|'official'}` → 201 `{ok, status:'pending'}`；前置：须已是开发者、当前为个人认证、无进行中的申请（409 `not_developer` / `already_verified` / `pending_exists`） |
 | GET | `/auth/verification-request/mine` | 🔒 | 查询申请状态 → `{developerLevel, pending}`（pending: 0 无 / 1 组织 / 2 官方） |
 
+### 设备流登录（启动器/CLI）
+
+RFC 8628 简化版，免 WebView 认证：
+
+| 方法 | 路径 | 说明 |
+| :--- | :--- | :--- |
+| POST | `/auth/device/code` | 发起：→ 201 `{deviceCode, userCode:"XXXX-XXXX", verificationUri, verificationUriComplete, expiresIn:600, interval:5}`；IP 限速 |
+| POST | `/device/token` | 轮询 `{deviceCode}` → pending 时 `{"status":"pending"}`；批准后 `{"status":"ok", user, accessToken, refreshToken, expiresIn}`（与登录同构，会话一次性消费）；400 `expired_token` 需重新发起 |
+| POST | `/auth/device/approve` | 🔒 网页确认 `{userCode}`（8 位，忽略连字符/大小写）→ `{ok}`；404 `invalid_user_code`。确认页：`https://plugins.qomicex.top/auth/device?code=...` |
+
 ## 插件 `/plugins`
 
 ### 公开读
@@ -139,7 +149,8 @@ Plugin 对象公共字段：`{id, slug, developerId, name, description, category
 | DELETE | `/orgs/:slug/invites/:code` | 🔒 admin | 撤销邀请码 → `{ok}` |
 | PATCH | `/orgs/:slug/members/:userId` | 🔒 owner | 调整成员角色 `{role:'admin'\|'member'}`；不能改 owner 角色 |
 | DELETE | `/orgs/:slug/members/:userId` | 🔒 member | 移除成员；不能移除 owner 及同级或更高级成员；owner 不能退出自己创建的组织 |
-| POST | `/orgs/:slug/verify-github` | 🔒 admin | GitHub 组织验证 `{code, githubOrg?}`（不传用已存值）。要求授权用户是该 GitHub 组织 active 的 owner/admin。成功 → `{ok, githubOrg}`；错误：`github_org_taken` / `not_org_member` / `membership_pending` / `need_org_admin` / `github_org_conflict` |
+| POST | `/orgs/:slug/verify-github/init` | 🔒 admin | GitHub 组织验证（GitHub App 安装流）第一步：`{githubOrg?}`（不传用已存值）→ `{installUrl, githubOrg}`。组织 owner 在 GitHub 完成 App 安装后回跳确认页 |
+| POST | `/orgs/verify-github/complete` | 🔒 admin | 第二步：App 安装回调确认 `{state, installationId?}` → `{ok, orgSlug, githubOrg}`；403 `not_installed`（尚未安装 App）。错误：`github_org_taken` / `bad_state`(会话过期) / `state_user_mismatch` / `org_mismatch` / `github_org_conflict` |
 | PATCH | `/orgs/:slug` | 🔒 admin | 更新资料 `{name?, description?, iconUrl?}` 至少一项 → `{ok}` |
 | DELETE | `/orgs/:slug` | 🔒 owner | 解散组织；名下插件回归原开发者 → `{ok}` |
 
