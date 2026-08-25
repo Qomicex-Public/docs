@@ -157,10 +157,35 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 ## 上传发布
 
+### 方式一：`qomicex publish`（一键，推荐）
+
+CLI 走 RFC 8628 设备流，全程命令行完成：
+
+```bash
+export QOMICEX_SIGN_KEY=<私钥 base64/PEM>   # 或 --key ./key.pem
+qomicex publish --changelog "修复 X"
+```
+
+流程：设备流登录（打印授权码与验证 URL，浏览器确认）→ `POST /developer/keys` 上传开发者公钥获取证书 → 私钥签名包体（`signature.json` + `signature.cert.json` 打进 `.qplugin`）→ 查找/创建插件记录 → `POST /plugins/:id/versions` multipart 上传。详见 [qomicex CLI 工具参考](/plugins/cli)。
+
+### 方式二：网页手动上传
+
 1. 登录 [插件商店](https://plugins.qomicex.top) → 升级为开发者
 2. 开发者中心 → 新建插件（填 slug、名称、分类）
-3. 进入插件管理页 → 「上传新版本」→ 选择 `.qplugin`（把 zip 改后缀为 `.qplugin`）
-4. 纯 L3 层且无危险权限的包**自动发布**；其余进入人工审核，结果在版本列表查看
+3. **上传前必须先用 CLI 签名**（商店**强制验签**）：
+
+```bash
+qomicex pack --key ./dev-key.pem    # 产出带 signature.json 的 .qplugin
+```
+
+4. 插件管理页 → 「上传新版本」→ 选择签名后的 `.qplugin`（把 zip 改后缀为 `.qplugin`）
+5. 纯 L3 层且无危险权限的包**自动发布**；其余进入人工审核，结果在版本列表查看
+
+::: warning 签名
+- **商店上传强制验签**：缺 `signature.json` 或验签失败 → 422 `signature_invalid`，上传被拒
+- 签名 = Ed25519 三级信任链（商店根钥签发开发者公钥证书 → 开发者私钥签包体），`signedHash` 为规范化 manifest + 文件清单的 SHA-256
+- 密钥生成：`openssl genpkey -algorithm Ed25519 -out dev-key.pem` 或 `node scripts/plugin-keygen.mjs generate`
+:::
 
 常见上传错误速查：
 
@@ -170,3 +195,4 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem
 | `缺少根级 manifest.json` | manifest 被压进了子文件夹 |
 | `version 不是合法 semver` | 版本号须形如 `1.2.3` |
 | `版本 x.y.z 已存在` | 同版本号重复上传 |
+| `签名校验失败`（`signature_invalid`） | 未签名 / 签名与开发者公钥不匹配 / 包体被篡改 / 商店未配置根公钥。用 `qomicex pack --key` 重新签名后上传 |

@@ -33,5 +33,8 @@ Qomicex 插件（`.qplugin`）本质是一个 **ZIP 压缩包**，内含一份 `
 - [插件依赖与互调用](./dependencies)
 - [WASM 插件（L3）](./wasm-plugin)
 - [悬浮窗开发](./overlay)
+- [CLI 工具参考](./cli)
+- [主题系统](./theme)
+- [调试与热重载](./debugging)
 - [发布规范](./publishing)
 - [开发要点与避坑指南](./pitfalls)

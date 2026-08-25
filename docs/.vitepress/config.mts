@@ -47,6 +47,9 @@ export default defineConfig({
             { text: '插件依赖与互调用', link: '/plugins/dependencies' },
             { text: 'WASM 插件（L3）', link: '/plugins/wasm-plugin' },
             { text: '悬浮窗开发', link: '/plugins/overlay' },
+            { text: 'CLI 工具参考', link: '/plugins/cli' },
+            { text: '主题系统', link: '/plugins/theme' },
+            { text: '调试与热重载', link: '/plugins/debugging' },
             { text: '发布规范', link: '/plugins/publishing' },
             { text: '开发要点与避坑指南', link: '/plugins/pitfalls' }
           ]

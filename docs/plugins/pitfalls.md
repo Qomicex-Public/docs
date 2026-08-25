@@ -6,12 +6,12 @@
 
 ### 内联渲染如何工作
 
-插件有两种渲染模式，由 `layers` 决定：
+插件有两种渲染模式，由 manifest 的 `render` 字段决定（**默认 iframe**）：
 
 | 模式 | 触发 | 渲染方式 | 脚本执行时机 |
 |------|------|---------|-------------|
-| **L2 iframe 沙箱** | manifest `layers` 含 `l2` | `<iframe sandbox="allow-scripts">` + `srcdoc` | srcdoc 解析时自动执行 |
-| **内联渲染** | 不含 `l2` | 剥壳后注入主界面容器 | 激活加载时立即执行 |
+| **iframe 沙箱（默认）** | 缺省或 `"render": "iframe"` | `<iframe sandbox="allow-scripts">` + `srcdoc` | srcdoc 解析时自动执行 |
+| **内联渲染** | 显式 `"render": "inline"` | 剥壳后注入主界面容器 | 激活加载时立即执行 |
 
 ### L2 iframe 沙箱
 
@@ -32,12 +32,13 @@
 
 ### 脚本内的 document 访问
 
-内联模式下插件脚本与主界面**同 window 上下文**。`PluginPage` 会把 `document.getElementById('root')` 临时劫持为插件容器。所以：
+插件默认运行在 **iframe 沙箱**（opaque origin，独立 document）；仅显式声明 `"render": "inline"` 才走内联渲染。内联模式下插件脚本与主界面**同 window 上下文**，`PluginPage` 会把 `document.getElementById('root')` 临时劫持为插件容器。所以：
 - 不要依赖全局 `document` 查询主界面元素
-- 用 `document.getElementById('root')` 获取自己的容器（当前实现下可行）
+- 用 `document.getElementById('root')` 获取自己的容器（当前实现下可行，内联模式）
+- 若依赖主界面 DOM，需显式 `"render": "inline"`；否则请用 iframe 隔离
 
 ::: tip
-需要隔离环境、常驻脚本（AI 助手、工具面板）→ 用 `["l2"]` 沙箱。纯 UI/依赖主界面 DOM 的轻量插件 → 不声明 l2，走内联。
+需要隔离环境、常驻脚本（AI 助手、工具面板）→ 用默认 iframe 沙箱。纯 UI/依赖主界面 DOM 的轻量插件 → 显式声明 `"render": "inline"`。
 :::
 
 ## API 调用注意事项
@@ -73,7 +74,7 @@ await __PLUGIN_API__.proxyFetchStream(req, {
 
 ### 激活取决于 entry.frontend，而非 layers
 
-插件安装后初始状态为 `installed`，实际激活取决于两点：① `entry.frontend` 存在（`activatePlugin` 仅在 `entry.frontend` 存在时才渲染并标记 `active`）；② 用户在插件列表中启用。与 `layers` 声明无关——纯 `["l3"]` 插件若有 `entry.frontend` 照样会激活（走内联渲染）。
+插件安装后初始状态为 `installed`，实际激活取决于两点：① `entry.frontend` 存在（`activatePlugin` 仅在 `entry.frontend` 存在时才渲染并标记 `active`）；② 用户在插件列表中启用。与 `layers` 声明无关——纯 `["l3"]` 插件若有 `entry.frontend` 照样会激活（默认 iframe 沙箱，仅 `"render":"inline"` 走内联）。
 
 ### 激活顺序已自动处理
 

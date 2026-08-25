@@ -11,6 +11,7 @@
   "version": "1.2.0",
   "minLauncherVersion": "0.1.0",
   "layers": ["l3"],
+  "render": "iframe",
   "permissions": ["ui:toast", "config:read", "config:write", "network:cors_proxy"],
   "dependencies": [
     { "id": "top.qomicex.markdown", "version": ">=1.0.0" }
@@ -44,6 +45,7 @@
 | `version` | string | ✅ | — | 插件版本（用于依赖匹配）。见 [版本语法](#版本范围语法) |
 | `minLauncherVersion` | string | ❌ | `""` | 最低启动器版本。⚠️ 当前版本**仅存储、未实际校验** |
 | `layers` | string[] | ❌ | `[]` | 图层声明。值：`l0`/`l1`/`l2`/`l3`，可多个。详见 [layers 图层定义](#layers-图层定义) |
+| `render` | string | ❌ | `"iframe"` | 渲染方式：`"inline"` / `"iframe"`。**默认 `"iframe"`（沙箱）**；仅显式声明 `"render": "inline"` 才走内联渲染。详见 [layers 图层定义](#layers-图层定义) |
 | `permissions` | string[] | ❌ | `[]` | 权限声明。⚠️ 后端仅存储，**由前端运行时校验**（缺失则 API 调用报错） |
 | `dependencies` | PluginDependency[] | ❌ | `[]` | 前置插件依赖。见 [插件依赖与互调用](./dependencies) |
 | `entry` | object | ❌ | `{}` | 入口声明 |
@@ -146,22 +148,22 @@
 
 **当前实现状态（重要）：**
 
-- **L2 脚本层已实现**：声明 `l2` 的插件走 **iframe 沙箱**（`<iframe sandbox="allow-scripts">` + postMessage 桥），与主界面隔离；不声明 `l2` 的插件走内联渲染（与主界面同上下文）
-  - L2 沙箱内同样支持全部 `__PLUGIN_API__` 方法、`.p-*` 组件样式、`registerMethod`/`callPlugin`（跨窗口中转）
+- **iframe 沙箱为默认渲染**：带 `entry.frontend` 的插件**默认走 iframe 沙箱**（`<iframe sandbox="allow-scripts">` + postMessage 桥），与主界面 DOM/CSS 隔离（opaque origin，防 CSS 泄漏与同源窃取）。仅 manifest 显式声明 `"render": "inline"` 才走内联渲染（与主界面同上下文，兼容旧插件）。
+  - iframe 沙箱内同样支持全部 `__PLUGIN_API__` 方法、`.p-*` 组件样式、`registerMethod`/`callPlugin`（跨窗口中转）
   - 沙箱插件脚本随 `srcdoc` 解析自动执行，无需进入页面
-- **插件激活条件**：插件安装后初始状态为 `installed`，实际激活取决于两点：① `entry.frontend` 存在（`activatePlugin` 仅在 `entry.frontend` 存在时才渲染并标记 `active`）；② 用户在插件列表中启用。与 `layers` 声明无关——纯 `["l3"]` 插件若有 `entry.frontend` 照样会激活（走内联渲染）。
-- **L2 沙箱与内联的差异**：
-  | 维度 | L2 iframe 沙箱 | 内联渲染 |
+- **插件激活条件**：插件安装后初始状态为 `installed`，实际激活取决于两点：① `entry.frontend` 存在（`activatePlugin` 仅在 `entry.frontend` 存在时才渲染并标记 `active`）；② 用户在插件列表中启用。与 `layers` 声明无关——纯 `["l3"]` 插件若有 `entry.frontend` 照样会激活（默认走 iframe 沙箱）。
+- **iframe 沙箱与内联渲染的差异**：
+  | 维度 | iframe 沙箱（默认） | 内联渲染（`"render":"inline"`） |
   |------|----------------|---------|
-  | 隔离性 | 与主界面完全隔离（独立 window） | 与主界面同 window |
+  | 隔离性 | 与主界面完全隔离（独立 window，opaque origin） | 与主界面同 window |
   | 脚本执行 | srcdoc 解析即执行 | 激活加载时立即执行 |
   | 依赖注入 | `registerMethod` 通知主窗口中转 | 直接调用主窗口注册表 |
-  | 适用 | 需要隔离、独立的插件 | 轻量 UI、主题类 |
+  | 适用 | 需要隔离、独立的插件（默认推荐） | 轻量 UI、需访问主界面 DOM 的插件 |
 - L0/L1 当前为**声明性预留层级**，暂无独立运行机制；**L3 WASM 已实现**：声明 `l3` 且包内含 `plugin.wasm` 的插件，由启动器 Rust 层（wasmtime）加载并执行（见 [WASM 插件](./wasm-plugin)）
 
 ::: tip 建议
-- 需要隔离环境或常驻脚本的插件（如 AI 助手、工具面板）→ 声明 `["l2"]`，走沙箱
-- 纯 UI/主题类或依赖主界面 DOM 的轻量插件 → 不声明 l2，走内联
+- 需要隔离环境或常驻脚本的插件（如 AI 助手、工具面板）→ 使用默认 iframe 沙箱
+- 纯 UI/主题类或依赖主界面 DOM 的轻量插件 → 显式声明 `"render": "inline"`
 - 若插件后续要接入 WASM 后端逻辑，可再叠加 `"l3"`
 :::
 

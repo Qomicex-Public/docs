@@ -33,7 +33,7 @@ Qomicex Launcher 插件商店（`plugins.qomicex.top`）后端 API 规格，供�
 | 409 | `slug_taken` / `account_exists` / `version_exists` / `cannot_delete_latest` / `no_published_version` / `already_member` / `invite_exhausted` / `github_already_bound` / `github_org_taken` 等 | 冲突 |
 | 410 | `invite_expired` | 邀请链接过期 |
 | 413 | `too_large` | 包体超 50MB |
-| 422 | `validation_error` / `invalid_package` / `unsafe_package` / `version_mismatch` / `missing_dependency` | 校验失败 |
+| 422 | `validation_error` / `invalid_package` / `unsafe_package` / `version_mismatch` / `missing_dependency` / `signature_invalid` | 校验失败 |
 | 429 | `rate_limited` | 触发限流 |
 | 500 | `internal` / `mail_send_failed` | 服务器内部 / 邮件发送失败 |
 
@@ -102,7 +102,7 @@ RFC 8628 简化版，免 WebView 认证：
 | GET | `/plugins?q&category&tags&sort&page&pageSize&minLauncherVersion` | 插件市场列表（仅已发布）。`q` 模糊搜名称/描述/slug；`category` ∈ `tool\|launcher\|theme\|integration`；`tags` 单标签过滤；`sort=downloads` 按下载量（默认最新）；`minLauncherVersion` 过滤不兼容插件。→ `{total, page, pageSize, items[Plugin]}` |
 | GET | `/plugins/:slug` | 插件详情 → Plugin + `versions[]`（仅已发布：`{id, version, changelog?, minLauncherVersion, layers[], permissions[], sha256, sizeBytes, downloadCount, createdAt}`）。404 未发布或不存在 |
 | GET | `/plugins/:slug/reviews?page&pageSize` | 评价列表 → `{items[{id, rating, content, createdAt, updatedAt?, username, developerLevel, avatarUrl?}]}` |
-| POST | `/plugins/check-updates` | **启动器核心端点**：批量更新检查。Body `{launcherVersion:'x.y.z', installed:[{slug, version}] ≤200}` → `{updates[{slug, currentVersion, latestVersion, changelog?, sha256, permissions[], layers[], download:{url, mirrorUrl?}}]}`。已最新或不兼容当前启动器版本的不返回 |
+| POST | `/plugins/check-updates` | **启动器核心端点**：批量更新检查。Body `{launcherVersion:'x.y.z', installed:[{slug, version}] ≤200}` → `{updates[{slug, currentVersion, latestVersion, changelog?, sha256, permissions[], layers[], download:{url, mirrorUrl?}, rolloutPercent?}]}`。`rolloutPercent` 为灰度放量百分比（缺省/100=全量，`<100` 由客户端按随机值决定是否放量）。已最新或不兼容当前启动器版本的不返回 |
 | GET | `/plugins/:slug/versions/:version/download` | 双通道下载信息。`:version` 可为 `latest` → `{url, mirrorUrl?, sha256, size}`；客户端竞速下载 + SHA-256 校验。限流 60/min/IP |
 
 Plugin 对象公共字段：`{id, slug, developerId, name, description, category, tags[], iconUrl?, status, latestVersion?, downloadsCount, ratingAverage?, ratingCount, developerName?, developerLevel?, orgId?/orgSlug?/orgName?, officialComment?, officialCommentAt?, createdAt, publishedAt?}`。
@@ -117,12 +117,12 @@ Plugin 对象公共字段：`{id, slug, developerId, name, description, category
 | POST | `/plugins/` | 登录 | 创建插件 `{orgId?, slug(3-64 小写字母数字连字符), name(≤64), description?(≤2000), category?, tags?(≤10), iconUrl?}` → 201 `{plugin}`；初始待审核；409 `slug_taken` |
 | PUT | `/plugins/:id` | full | 更新元信息（同创建字段，均可选）→ `{plugin}` |
 | DELETE | `/plugins/:id` | full | 删除插件（软删）→ `{ok:true}` |
-| POST | `/plugins/:id/versions` | full / member | 上传新版本，multipart/form-data：`file`(.qplugin ≤50MB 必填)、`changelog?`(≤4000)、`version?`(须与 manifest 一致)。校验链：zip 结构 → 根级 manifest.json → zip-slip → 依赖存在性 → 版本去重。纯 L3 且无 danger 权限自动发布，否则人工审核。→ 201 `{id, version, sha256, size, reviewStatus:'published'\|'pending'}` |
+| POST | `/plugins/:id/versions` | full / member | 上传新版本，multipart/form-data：`file`(.qplugin ≤50MB 必填)、`changelog?`(≤4000)、`version?`(须与 manifest 一致)。校验链：zip 结构 → 根级 manifest.json → zip-slip → **签名验证（Ed25519，缺签名或验签失败 → 422 `signature_invalid`）** → 依赖存在性 → 版本去重。纯 L3 且无 danger 权限自动发布，否则人工审核。→ 201 `{id, version, sha256, size, reviewStatus:'published'\|'pending'}` |
 | DELETE | `/plugins/:id/versions/:versionId` | full / member | 撤回版本（同时删包文件）→ `{ok}`；409 `cannot_delete_latest`（最新发布版不可删，先发新版） |
 | PATCH | `/plugins/:id/transfer` | full | 归属转让 Body `{orgId}` 或 `{orgId:null}` 转回个人；转入组织需目标组织 admin+ → `{ok, orgId}` |
 | GET | `/plugins/:id/stats` | full / member | 统计面板 → `{totalDownloads, ratingAverage?, ratingCount, reviewsCount, series[{date,count}] 近30天, versions[]}` |
 
-上传失败错误码：`too_large` / `unsafe_package` / `invalid_package` / `version_mismatch` / `missing_dependency` / `version_exists`。
+上传失败错误码：`too_large` / `unsafe_package` / `invalid_package` / `version_mismatch` / `missing_dependency` / `version_exists` / `signature_invalid`。
 
 ### 评价 🔒
 

@@ -53,7 +53,7 @@ my-plugin/
 
 关键字段：
 - `id`：插件唯一 ID，同时是安装目录名（`plugins/{id}/`），**一经发布不要更改**
-- `layers`：图层声明。含脚本页面的插件建议 `["l2", "l3"]`（含 `l2` 走 iframe 沙箱；纯 `["l3"]` 走内联渲染。激活取决于 `entry.frontend` 是否存在，详见 [layers 图层定义](./manifest#layers-图层定义)）
+- `layers`：图层声明。含脚本页面的插件建议 `["l2", "l3"]`（**默认 iframe 沙箱渲染**，与声明 `l2` 行为一致；若需内联渲染须在 manifest 显式声明 `"render": "inline"`。激活取决于 `entry.frontend` 是否存在，详见 [layers 图层定义](./manifest#layers-图层定义)）
 - `permissions`：插件要用的权限（见 [插件 API 完整参考](./plugin-api)）
 - `entry.frontend`：插件页面入口，`.qplugin` 包内的相对路径
 - `contributes.menuItems`：在侧边栏底部创建入口
