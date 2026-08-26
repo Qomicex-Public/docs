@@ -117,3 +117,62 @@ component（组件消费层 = CSS 变量，唯一被 var() 读取）
 ## 预设主题
 
 启动器内置 Catppuccin 四预设（latte / frappe / macchiato / mocha），已迁移到新 token 命名。切换预设或自定义 `.qtheme` 时，所有消费 `var(--*)` 的 UI 组件即时响应。
+
+## 插件驱动主题覆盖
+
+插件可通过 `__PLUGIN_API__` 动态覆盖启动器 UI 的 CSS 变量，无需分发 `.qtheme` 包即可实现运行时换肤。
+
+### 优先级层级
+
+```
+themeColor inline style（--primary/--ring/--primary-foreground，最高）
+  └─ applyThemeOverride（:root:root，选择器特异性 0,2,0）
+    └─ .qtheme 主题（:root）
+      └─ index.css @layer base（最低）
+```
+
+- `applyThemeOverride` 注入的 `<style>` 特异性高于 `.qtheme` 和 `@layer base`
+- 若用户设置了主题色（`themeColor.ts` 的 inline style），`--primary`/`--ring`/`--primary-foreground` 三者由 inline 接管，override 中这三者不生效
+
+### API
+
+| 方法 | 权限 | 说明 |
+|------|------|------|
+| `getThemeColor` | `config:read` | 获取当前种子色 hex（`#rrggbb` 或 `null`） |
+| `applyThemeOverride(vars)` | `config:write` | 覆盖 CSS 变量（HSL 格式，白名单 token） |
+| `clearThemeOverride()` | `config:write` | 移除覆盖样式 |
+
+### 使用示例
+
+```js
+const __PLUGIN_API__ = window.__PLUGIN_API__
+
+// 获取当前主题色，调整插件 UI
+const seedColor = await __PLUGIN_API__.call('getThemeColor')
+if (seedColor) {
+  document.getElementById('my-plugin-card').style.borderColor = seedColor
+}
+
+// 应用自定义主题覆盖
+await __PLUGIN_API__.call('applyThemeOverride', {
+  'background': '240 23% 9%',
+  'foreground': '220 20% 93%',
+  'primary': '262 83% 58%',
+  'accent': '262 83% 58%'
+})
+
+// 用户取消自定义主题时清除
+await __PLUGIN_API__.call('clearThemeOverride')
+```
+
+### 安全限制
+
+- **token 白名单**：仅允许 30 个预定义语义 token（`background`、`foreground`、`primary`、`accent`、`border`、`status-*` 等）
+- **HSL 格式校验**：值必须严格匹配 `H S% L%`（如 `142 71% 48%`），拒绝任意 CSS 注入
+- 不在白名单的 token 和非法格式会被静默忽略
+
+### 生命周期
+
+- `applyThemeOverride` 可重复调用，后者覆盖前者
+- **插件停用时不会自动清除** override（因 token 可能与插件 UI 绑定），需插件自行在停用钩子或用户操作时调用 `clearThemeOverride`
+- `clearThemeOverride` 仅移除 override 样式，不影响 `.qtheme` 或内置 light/dark 主题

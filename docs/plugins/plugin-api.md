@@ -481,6 +481,50 @@ const plugins = await __PLUGIN_API__.call('listPlugins')
 - 权限：`plugin:list`
 - 后台走 `GET /api/plugins/`
 
+### getThemeColor — 获取当前主题种子色
+
+返回当前启动器主题的种子色 hex 值，供插件根据主题色调整自身 UI。
+
+```js
+const hex = await __PLUGIN_API__.call('getThemeColor')
+// hex: '#3b82f6' 或 null（未设置主题色时）
+```
+- 权限：`config:read`
+- 返回：`string | null`（`#rrggbb` 格式，或 `null`）
+- 逻辑：优先取外观设置中的静态 hex 色值；若为 Monet 动态模式（`background`），取当前 `--primary` CSS 变量转换为 hex
+
+### applyThemeOverride — 应用主题覆盖
+
+动态覆盖启动器 UI 的 CSS 变量（颜色主题），实现插件驱动的全局换肤。
+
+```js
+await __PLUGIN_API__.call('applyThemeOverride', {
+  'background': '240 23% 9%',
+  'foreground': '220 20% 93%',
+  'primary': '142 71% 48%',
+  'accent.foreground': '220 20% 93%'
+})
+```
+- 权限：`config:write`
+- 参数：`(vars: Record<string, string>)` — 键为语义 token（支持点分或横杠命名），值为 `H S% L%` 格式字符串
+- 安全限制：
+  - **token 白名单**：仅允许 `background`、`foreground`、`primary`、`accent`、`border` 等 30 个预定义语义 token
+  - **HSL 格式校验**：值必须严格匹配 `^\d{1,3} \d{1,3}% \d{1,3}%$`，拒绝任意 CSS 注入
+- 实现：注入 `<style id="qomicex-plugin-theme-override">` 到 `document.head`，选择器 `:root:root` 保证高优先级
+- 重复调用会覆盖前一次的 override 样式
+- 插件停用时**不会**自动清除，需手动调用 `clearThemeOverride`
+
+### clearThemeOverride — 清除主题覆盖
+
+移除由 `applyThemeOverride` 注入的覆盖样式，恢复到原主题。
+
+```js
+await __PLUGIN_API__.call('clearThemeOverride')
+```
+- 权限：`config:write`
+- 移除 `id="qomicex-plugin-theme-override"` 的 `<style>` 元素
+- 建议在插件停用钩子或用户取消自定义主题时调用
+
 ### overlay.create — 创建悬浮窗
 
 创建一个可拖拽的独立悬浮窗，返回悬浮窗 id。
