@@ -39,6 +39,18 @@ my-wasm-plugin.qplugin（即 zip）
 - manifest `layers` 需含 `"l3"`，`permissions` 含 `"wasm:execute"`
 - 详见 [WASM 插件（L3）](./wasm-plugin)
 
+### 主题内容（可选发布物）
+
+主题、图标、字体是**可选**发布内容，通过 `contributes` 声明，不要求独立发布格式：
+
+| 内容 | 声明位置 | 说明 |
+|------|---------|------|
+| 主题 CSS | `entry.theme` | 激活时注入 `<style data-plugin-theme>` |
+| 图标主题 | `contributes.iconTheme` | `.qtheme` 包内 `icon-theme.json` 路径 |
+| 字体/连字 | `contributes.fontLinks` | 字体 CSS/CDN URL，激活时注入 `<link>` |
+
+三者都作为 `.qplugin` 包内资源随包分发，无需单独打包。详见 [主题系统](./theme)。
+
 ## 二、命名规范
 
 | 项目 | 规范 |
@@ -101,6 +113,7 @@ my-wasm-plugin.qplugin（即 zip）
 
 - **更新检查**：启动器启动后静默轮询商店 `POST /plugins/check-updates`（按 launcher 版本 + 已装插件清单），有更新时在插件管理页显示升级按钮。
 - **灰度放量**：商店返回 `rolloutPercent`（0-100，缺省/100 = 全量）。`<100` 时启动器按 `hash(slug@latestVersion) % 100 < rolloutPercent` 决定该用户是否看到升级提示，同一用户结果稳定。
+- **遥测自动暂停**：商店按 24h 错误上报计数对版本做**灰度保护**——某版本 24h 错误数超过阈值（默认 10）后，商店不再把该版本作为更新建议下发（已安装用户不受影响）。详见 [灰度遥测](./telemetry)。
 - **升级流程**：点击升级按钮 → 确认 → 走商店安装管线（下载 → SHA-256 校验 → 验签 → 覆盖安装）。
 - **回滚快照**：覆盖安装前旧目录会改名 `plugins/{id}.bak-{version}` 快照；升级后插件异常可点「回滚」按钮恢复（`POST /api/plugins/{id}/rollback`）。`PluginInfo.hasRollback` 标记是否有可用快照。
 - **卸载**：设置 → 插件 → 删除按钮（会删除 `plugins/{id}/` 整个目录）。
@@ -123,6 +136,17 @@ my-wasm-plugin.qplugin（即 zip）
 - **自动发布**：纯 L3 且无危险权限的包上传后**自动发布**，无需人工审核。
 - **人工审核**：其余（含 UI 层或有危险权限）进入审核队列，结果在版本列表查看。
 - 更新版本时**上传同名 slug 的新版本**，商店做版本去重（409 `version_exists`）。
+
+### 3. 自建镜像 / 私有注册表（开放注册表协议）
+
+如果你需要为自己或团队搭建私有的插件分发源，**开放注册表协议**（详见[商店侧边栏「开放注册表协议」](/store/registry-spec)）允许第三方实现兼容的镜像：
+
+- **核心端点**：只需实现 `GET /registry`、`GET /plugins`、`GET /plugins/:slug`、`GET /plugins/:slug/versions/:version/download` 四个端点即可被启动器识别为可用源
+- **下载双通道**：镜像重传包体时必须原样保留 `signature.json` 和 `signature.cert.json`，不可重打包
+- **发现机制**：启动器设置 `registryUrl` 可配置多源列表，主源不可达时自动回退
+- **部署方式**：Cloudflare Worker 复制（共享负载）、纯静态托管（只读）、或自建完整注册表（独立源）
+
+详细实现指南见[开放注册表协议](/store/registry-spec)。
 
 ## 八、数据与目录
 
@@ -154,6 +178,8 @@ my-wasm-plugin.qplugin（即 zip）
 - [ ] 本地安装测试通过（上传 → 启用 → 重启 → 功能验证）
 - [ ] `qomicex verify --package` 验签通过
 - [ ] 若调用其他插件，已在文档说明前置插件名称与版本
+- [ ] 若贡献了图标/字体主题，已在 `contributes.iconTheme` / `contributes.fontLinks` 声明（见[主题系统](./theme)）
+- [ ] 发布后关注错误率（灰度遥测阈值默认 10/24h，见[灰度遥测](./telemetry)）
 
 ## 十、版本兼容建议
 

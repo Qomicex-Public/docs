@@ -46,10 +46,13 @@ export default defineConfig({
             { text: 'UI 组件库（.p-* 样式）', link: '/plugins/plugin-ui' },
             { text: '插件依赖与互调用', link: '/plugins/dependencies' },
             { text: 'WASM 插件（L3）', link: '/plugins/wasm-plugin' },
+            { text: 'l4 远程 WebView', link: '/plugins/webview-l4' },
             { text: '悬浮窗开发', link: '/plugins/overlay' },
             { text: 'CLI 工具参考', link: '/plugins/cli' },
             { text: '主题系统', link: '/plugins/theme' },
             { text: '调试与热重载', link: '/plugins/debugging' },
+            { text: 'AI 辅助开发', link: '/plugins/ai-development' },
+            { text: '灰度遥测', link: '/plugins/telemetry' },
             { text: '发布规范', link: '/plugins/publishing' },
             { text: '开发要点与避坑指南', link: '/plugins/pitfalls' }
           ]
@@ -69,7 +72,8 @@ export default defineConfig({
           text: '插件商店',
           items: [
             { text: '发布与打包', link: '/store/publish' },
-            { text: 'API 参考', link: '/store/' }
+            { text: 'API 参考', link: '/store/' },
+            { text: '开放注册表协议', link: '/store/registry-spec' }
           ]
         }
       ]

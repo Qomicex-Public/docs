@@ -44,8 +44,8 @@
 | `name` | string | ✅ | — | 插件显示名 |
 | `version` | string | ✅ | — | 插件版本（用于依赖匹配）。见 [版本语法](#版本范围语法) |
 | `minLauncherVersion` | string | ❌ | `""` | 最低启动器版本。⚠️ 当前版本**仅存储、未实际校验** |
-| `layers` | string[] | ❌ | `[]` | 图层声明。值：`l0`/`l1`/`l2`/`l3`，可多个。详见 [layers 图层定义](#layers-图层定义) |
-| `render` | string | ❌ | `"iframe"` | 渲染方式：`"inline"` / `"iframe"`。**默认 `"iframe"`（沙箱）**；仅显式声明 `"render": "inline"` 才走内联渲染。详见 [layers 图层定义](#layers-图层定义) |
+| `layers` | string[] | ❌ | `[]` | 图层声明。值：`l0`/`l1`/`l2`/`l3`/`l4`，可多个。详见 [layers 图层定义](#layers-图层定义) |
+| `render` | string | ❌ | `"iframe"` | 渲染方式：`"inline"` / `"iframe"` / `"webview"`。**默认 `"iframe"`（沙箱）**；仅显式声明 `"render": "inline"` 才走内联渲染；`"webview"` 或 `layers` 含 `l4` 走独立窗口渲染。详见 [layers 图层定义](#layers-图层定义) |
 | `permissions` | string[] | ❌ | `[]` | 权限声明。⚠️ 后端仅存储，**由前端运行时校验**（缺失则 API 调用报错） |
 | `dependencies` | PluginDependency[] | ❌ | `[]` | 前置插件依赖。见 [插件依赖与互调用](./dependencies) |
 | `entry` | object | ❌ | `{}` | 入口声明 |
@@ -72,6 +72,8 @@
 | `downloadSources` | string[] | 保留，当前未使用 |
 | `commands` | string[] | 保留，当前未使用 |
 | `settingsPages` | string[] | 保留，当前未使用 |
+| `iconTheme` | string | 图标主题：`.qtheme` 包内 `icon-theme.json` 的相对路径（如 `"dist/icon-theme.json"`），激活时经主题管理器注册。详见 [主题系统](./theme#图标主题icon-themejson) |
+| `fontLinks` | string[] | 字体/连字贡献：字体 CSS/CDN URL 列表，激活时自动注入 `<link rel="stylesheet">`，停用时移除。详见 [字体/连字贡献](./theme#字体连字贡献) |
 
 ### menuItems 数组元素
 
@@ -139,6 +141,7 @@
 | **L1** 声明式 | 配置文件声明 | 新增下载源、新增镜像、API 端点 | 纯声明，无执行能力 |
 | **L2** 脚本 | JS（前端沙箱内运行） | UI 扩展、菜单注入、面板 | 经 postMessage 网关权限检查 |
 | **L3** WASM | WASM（后端 Wasmtime 沙箱） | Agent、协议解析器、复杂逻辑 | Host API 权限门控 |
+| **L4** 远程 WebView | 独立 Tauri WebviewWindow（独立 renderer 进程） | 重 UI、不受控、需进程级隔离的插件 | 跨窗口事件桥，主窗口执行 API 与权限校验 |
 
 **声明方式：** `layers` 是一个数组，可同时声明多个层级：
 
@@ -160,11 +163,13 @@
   | 依赖注入 | `registerMethod` 通知主窗口中转 | 直接调用主窗口注册表 |
   | 适用 | 需要隔离、独立的插件（默认推荐） | 轻量 UI、需访问主界面 DOM 的插件 |
 - L0/L1 当前为**声明性预留层级**，暂无独立运行机制；**L3 WASM 已实现**：声明 `l3` 且包内含 `plugin.wasm` 的插件，由启动器 Rust 层（wasmtime）加载并执行（见 [WASM 插件](./wasm-plugin)）
+- **L4 远程 WebView 已实现**：声明 `render:"webview"` 或 `layers` 含 `"l4"` 的插件，激活时由主窗口 `createRemoteWebview` 打开独立 Tauri WebviewWindow（与主界面进程级隔离），插件 UI 渲染在该窗口内，API 调用经 Tauri 事件转发到主窗口执行（见 [l4 远程 WebView](./webview-l4)）
 
 ::: tip 建议
 - 需要隔离环境或常驻脚本的插件（如 AI 助手、工具面板）→ 使用默认 iframe 沙箱
 - 纯 UI/主题类或依赖主界面 DOM 的轻量插件 → 显式声明 `"render": "inline"`
 - 若插件后续要接入 WASM 后端逻辑，可再叠加 `"l3"`
+- **重 UI / 不受控 / 需进程级隔离的插件**（如复杂编辑器、游戏 UI 增强）→ 声明 `"render": "webview"` 或 `layers` 含 `"l4"`（独立窗口，busy-loop 不影响主界面）
 :::
 
 ## 版本范围语法
