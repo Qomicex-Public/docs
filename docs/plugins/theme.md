@@ -55,8 +55,8 @@ component（组件消费层 = CSS 变量，唯一被 var() 读取）
   theme.json        ← 颜色主题（v1，见下 schema）
   theme.css         ← 可选，命名空间注入（--qtx- 前缀 / scoped），v2
   theme.mjs         ← 可选，CSS-in-JS 计算层（沙箱），v2
-  icon-theme.json   ← 图标主题，v2
-  fonts/            ← 字体贡献，v2
+  icon-theme.json   ← 图标主题（v1.5，见下）
+  fonts/            ← 字体贡献，v1.5（经 contributes.fontLinks 注入）
 ```
 
 ### theme.json schema v1
@@ -107,8 +107,98 @@ component（组件消费层 = CSS 变量，唯一被 var() 读取）
 | 类型 | 说明 | 状态 |
 |------|------|------|
 | **颜色主题** | token 全量映射，插件 UI 与启动器同源 → 原生控件全局换肤 | ✅ v1 已实现 |
-| **图标主题** | icon-theme.json：`{ "plugin-ui 图标名": "path/svg \| codepoint \| url" }` | 🔜 v2 |
-| **字体/连字** | 字体资源 + `font-feature-settings` 按作用域 | 🔜 v2 |
+| **图标主题** | icon-theme.json：`{ "plugin-ui 图标名": "path/svg \| codepoint \| url" }` | ✅ v1.5 已实现 |
+| **字体/连字** | 字体资源 + `font-feature-settings` 按作用域 | ✅ v1.5 已实现 |
+
+## 图标主题（icon-theme.json）
+
+图标主题是 `.qtheme` 包中与 `theme.json` 同级的新文件，为插件侧边栏、菜单项等图标提供覆盖映射。
+
+### 格式
+
+```json
+{
+  "schemaVersion": 1,
+  "fonts": ["MyIconFont"],
+  "icons": {
+    "fa-solid fa-robot": { "type": "svg", "path": "M0 0h24v24H0z..." },
+    "fa-solid fa-cog": { "type": "char", "codepoint": "⚙", "fontFamily": "MyIconFont" },
+    "my-custom": { "type": "url", "url": "https://example.com/icon.png" }
+  }
+}
+```
+
+### 字段说明
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `schemaVersion` | number | ✅ | 当前仅 `1` |
+| `fonts` | string[] | ❌ | 本主题依赖的 `font-family` 名称列表（声明性，字体资源需通过 `contributes.fontLinks` 注入） |
+| `icons` | object | ✅ | 图标映射。键 = FontAwesome 类名（如 `fa-solid fa-robot`）或自定义图标 ID；值 = 图标定义对象 |
+
+### 图标定义对象
+
+| 字段 | 类型 | type=svg | type=char | type=url |
+|------|------|----------|-----------|----------|
+| `type` | `"svg"` / `"char"` / `"url"` | ✅ | ✅ | ✅ |
+| `path` | string | ✅ `<path d="...">` | — | — |
+| `codepoint` | string | — | ✅ 字符或实体 | — |
+| `fontFamily` | string | — | ❌ 自定义字体名 | — |
+| `url` | string | — | — | ✅ 图片 URL |
+
+### 渲染优先级
+
+`PluginIcon` 组件渲染顺序：
+
+1. 当前主题的 `icon-theme.json` 中查找 `src` 键 → 匹配则渲染 SVG/char/URL
+2. 未命中，`src` 为 URL → `<img>`
+3. 未命中，`src` 为 FontAwesome 类名 → `<FontAwesomeIcon>`
+4. 均未命中 → `null`
+
+### 注册方式
+
+图标主题通过主题管理器注册，与颜色主题绑定：
+
+- `registerTheme(colorJson, iconJson?)` — 同时注册颜色 + 图标主题
+- `registerIconTheme(themeId, iconJson)` — 单独为已注册的颜色主题绑定图标
+
+当前活跃主题的图标映射可通过 `getActiveIconTheme()` 或 `useIconTheme()`（React Hook）获取。主题切换时映射自动更新。
+
+## 字体/连字贡献
+
+### manifest 声明
+
+插件 manifests 通过 `contributes` 字段声明字体资源：
+
+```json
+{
+  "contributes": {
+    "fontLinks": ["https://cdn.example.com/my-icons.css"]
+  }
+}
+```
+
+- `fontLinks`（string[]）：字体 CSS/CDN URL 列表。插件激活时，启动器自动注入 `<link rel="stylesheet">` 到 `<head>`；插件停用时自动移除。
+- 可用 `font-feature-settings` 作用域约定，在特定区域启用连字（见下方）。
+
+### 连字作用域约定
+
+启动器预定义 `.font-ligatures` 类（插件内等价类 `.p-font-ligatures`），应用在需要启用字体连字的区域（如控制台日志、版本号 diff 等）：
+
+```html
+<div class="font-ligatures">-> => <!-- 连字生效 --></div>
+```
+
+对应 CSS：
+
+```css
+.font-ligatures {
+  font-feature-settings: "liga" 1, "calt" 1;
+  font-variant-ligatures: common-ligatures contextual;
+}
+```
+
+插件内可使用 `.p-font-ligatures` 获得同等效果。
 
 ## 与 plugin-ui 的关系
 

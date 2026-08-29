@@ -1,6 +1,6 @@
 # qomicex CLI 工具参考
 
-`qomicex` 是 Qomicex 插件生态的命令行脚手架，覆盖插件开发全流程：`create` / `dev` / `pack` / `verify` / `publish`。
+`qomicex` 是 Qomicex 插件生态的命令行脚手架，覆盖插件开发全流程：`create` / `dev` / `pack` / `verify` / `bump` / `publish`。
 
 - 零运行时依赖（Node ≥ 20，仅用内置 `node:fs` / `node:zlib` / WebCrypto）
 - 包：`@qomicex/cli`（pnpm workspace 成员，源码在 `packages/qomicex-cli/`）
@@ -13,6 +13,15 @@ pnpm --filter @qomicex/cli build
 pnpm --filter @qomicex/cli link   # 链接到 PATH，之后可直接用 qomicex
 ```
 
+也可直接发布到 npm：
+
+```bash
+cd packages/qomicex-cli
+npm login
+npm version patch   # bump 版本（版本号单一来源 package.json，src 自动读取）
+npm publish
+```
+
 ## 命令总览
 
 | 命令 | 作用 |
@@ -21,6 +30,7 @@ pnpm --filter @qomicex/cli link   # 链接到 PATH，之后可直接用 qomicex
 | `qomicex dev` | 起本地调试环境（仓库内 harness 模式 / 仓库外裸 Vite） |
 | `qomicex pack` | 构建 → 打包 `.qplugin`（可选 `--key` 签名） |
 | `qomicex verify` | 校验 manifest / 权限 / 长循环 / 签名 |
+| `qomicex bump` | 递增 `manifest.json` 版本号（major / minor / patch） |
 | `qomicex publish` | 设备流登录 → 签名 → 上传商店 |
 
 ## create
@@ -69,6 +79,17 @@ qomicex verify --package ./release/x.qplugin   # 包模式：manifest + 签名�
 - **权限最小化**：对比 `manifest.permissions` 与源码实际调用的桥方法（`METHOD_PERMISSIONS` 表）。声明未用 / 用了未声明都会报错
 - **长循环告警**：`while(true)`、`for(;;)`、`setInterval` 无界轮询（提示放 Worker / WASM / 后端）——启发式文本扫描，可能误报/漏报
 - **签名检查**：包模式用内置商店根公钥验签（ADR-050）；无签名提示「未签名」不拒绝
+
+## bump
+
+```bash
+qomicex bump patch     # 1.0.0 → 1.0.1
+qomicex bump minor     # 1.0.0 → 1.1.0（默认，不传参数 = minor）
+qomicex bump major     # 1.0.0 → 2.0.0
+qomicex bump --version 2.5.0   # 直接指定目标版本
+```
+
+直接改写 `manifest.json` 的 `version` 字段（保留原缩进格式），不触发构建。发布新版本前用它递增版本，避免商店拒绝「比线上更老」的版本（409 `version_exists`）。
 
 ## publish
 

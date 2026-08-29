@@ -22,6 +22,12 @@ Qomicex Launcher 插件商店（`plugins.qomicex.top`）后端 API 规格，供�
 
 下文标记 🔒 = 需要认证。
 
+### 注册表元数据 `/registry`
+
+| 方法 | 路径 | 说明 |
+| :--- | :--- | :--- |
+| GET | `/registry` | 开放注册表元数据 → `{apiVersion:"1.0", baseUrl, pluginCount, capabilities[], mirrors?}`。启动器多源发现用（详见[开放注册表协议](./registry-spec)），缓存 60s |
+
 ### 错误码速查
 
 | HTTP | code | 场景 |

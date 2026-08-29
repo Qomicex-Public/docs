@@ -91,6 +91,7 @@ my-wasm-plugin.qplugin（即 zip）
 - `signedHash` = **规范化 manifest + 文件清单的 SHA-256**：`SHA-256(canonical JSON 的 { manifest: sha256(manifest.json 原始字节), files: [{path, sha256}] })`。规范化 = 键序递归排序 + 无空白 JSON，保证可复现哈希。
 - **强制范围**：商店新上传版本、启动器手动上传 `.qplugin` **强制验签**（缺签名或验签失败 → 422 `signature_invalid` / 拒绝安装）；商店安装与本地开发目录安装不强制（老版本兼容，开发路径放行）。
 - **降级兼容**：老版本（无签名）已发布可继续安装，不强制重签。更换/泄露私钥后重新生成密钥对并上传新公钥即可，旧证书自动失效。
+- **换根钥注意**：商店更换签名根钥后，内置根公钥（CLI `signature.ts` 的 `STORE_ROOT_PUBLIC_KEY_B64`、启动器 `plugin_signature.rs` 的 `ROOT_PUBLIC_KEY_B64`、CLI 文档 `signing.md`）必须同步更新，且所有旧证书签发的包验签失败、需重新 `qomicex publish` 换新证书。
 
 ### 签名工具
 
@@ -168,7 +169,7 @@ my-wasm-plugin.qplugin（即 zip）
 ## 九、发布检查清单
 
 - [ ] `manifest.json` 在包根目录，JSON 合法
-- [ ] `id` 唯一且不再更改，`version` 语义化递增
+- [ ] `id` 唯一且不再更改，`version` 语义化递增（可用 `qomicex bump patch|minor|major`）
 - [ ] `permissions` 只含必要权限（可用 `qomicex verify` 校验最小化）
 - [ ] 依赖插件的 `dependencies` 声明正确（必装/可选、版本范围）
 - [ ] `entry.frontend` 已声明（否则插件不被激活）
