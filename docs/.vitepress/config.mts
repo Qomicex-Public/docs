@@ -30,7 +30,8 @@ export default defineConfig({
           text: '使用指南',
           items: [
             { text: '简介', link: '/guide/' },
-            { text: '快速上手', link: '/guide/getting-started' }
+            { text: '快速上手', link: '/guide/getting-started' },
+            { text: '镜像源', link: '/guide/mirror' }
           ]
         }
       ],
@@ -63,7 +64,8 @@ export default defineConfig({
           text: '前置插件文档',
           items: [
             { text: '概览', link: '/libraries/' },
-            { text: 'MarkdownLib', link: '/libraries/markdownlib' }
+            { text: 'MarkdownLib', link: '/libraries/markdownlib' },
+            { text: 'MarkItDown', link: '/libraries/markitdown' }
           ]
         }
       ],

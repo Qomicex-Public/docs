@@ -18,4 +18,8 @@ features:
     details: 面向终端用户的操作手册与教程。
   - title: 插件开发
     details: 面向生态开发者的插件与扩展开发指南。
+  - title: 前置插件
+    details: 现成前置插件（MarkdownLib / MarkItDown）的使用文档。
+  - title: 插件商店
+    details: 插件发布、打包与商店 API 参考。
 ---
