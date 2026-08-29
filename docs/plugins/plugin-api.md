@@ -48,7 +48,7 @@ Permission denied: requires <权限id>
 | 权限 ID | 中文 | 风险 |
 |---------|------|------|
 | `instance:read` | 读取实例列表 | 普通 |
-| `instance:write` | 创建/修改/删除实例 | 警告 |
+| `instance:write` | 创建/修改/删除实例（含安装整合包） | 警告 |
 | `account:read` | 读取账号列表 | 普通 |
 | `license:read` | 读取许可证信息 | 普通 |
 | `config:read` | 读取启动器配置 | 普通 |
@@ -85,7 +85,6 @@ Permission denied: requires <权限id>
 | `filesystem:read` | 读取文件系统 | 警告 |
 | `filesystem:write` | 写入文件系统 | 危险 |
 | `download:manage` | 管理下载中心任务 | 警告 |
-| `instance:write` | 创建/修改/删除实例（含安装整合包） | 警告 |
 
 ::: tip
 「风险」用于安装详情弹窗的视觉提示：普通=蓝、警告=黄、危险=红。声明权限时遵循**最小权限原则**，只声明你真正用到的。
@@ -366,32 +365,46 @@ const fail = await __PLUGIN_API__.call('execCommand', 'nonexistent-cmd')
 - 超时 → `SHELL_TIMEOUT`(400)，命令被强制终止
 - 命令为空 → `SHELL_COMMAND_REQUIRED`(400)
 
-### getSystemInfo — 读取系统信息
-
-读取启动器系统信息（OS、内存等）。
-
-```js
-const info = await __PLUGIN_API__.call('getSystemInfo')
-```
-- 权限：`system:info`
-
 ### openUrl — 打开外部链接
 
-用系统默认浏览器打开外部 URL。
+用系统默认浏览器打开外部 URL。L2 沙箱内 `window.open` 会被 `sandbox` 拦截，请用此方法打开外链。
 
 ```js
 await __PLUGIN_API__.call('openUrl', 'https://example.com')
 ```
 - 权限：`system:notification`
-- 仅允许 `http://` / `https://` 协议，非法 URL 返回 400
+- 后台走 `POST /api/system/open-url`，仅接受 `http://` / `https://` 协议，非法 URL 返回 400
+
+### getSystemInfo — 读取系统与启动器信息
+
+读取操作系统、启动器与内存信息，可用于 `minLauncherVersion` 兼容检查或运行时判断平台。
+
+```js
+const info = await __PLUGIN_API__.call('getSystemInfo')
+// { Os, Architecture, OsName, OsVersion, OsVersionId, OsDisplayName, GitCommit,
+//   Memory, AvailableMemory,
+//   LauncherName, LauncherVersion, VersionType, Developers, CoreDependencies }
+```
+- 权限：`system:info`
+- 后台走 `GET /api/systeminfo`（与 `/api/system/info` 等价）
+- `GitCommit` 为启动器 Git 提交哈希；`Memory` / `AvailableMemory` 为字节数
+- 启动器元信息字段：
+  - `LauncherName`：启动器名称（如 `Qomicex Launcher`）
+  - `LauncherVersion`：启动器版本号（程序集版本，如 `0.1.1`）
+  - `VersionType`：版本类型，按版本号预发布标签动态判断（`alpha` / `beta` / `rc` / `dev`，否则 `stable`）
+  - `Developers`：`[{ name, role }]` 开发者列表
+  - `CoreDependencies`：`[{ name, version, license }]` 核心库列表（.NET / Tauri / Rust / Qomicex.Core 等）
 
 ### listPlugins — 读取已安装插件列表
 
+返回已安装插件列表，可用于依赖检测或商店联动。
+
 ```js
 const plugins = await __PLUGIN_API__.call('listPlugins')
-// [{ id, name, version, status }, ...]
+// [{ id, name, version, status }, ...]  status: 'installed'|'active'|'disabled'
 ```
 - 权限：`plugin:list`
+- 后台走 `GET /api/plugins/`
 
 ### uploadPlugin — 安装插件
 
@@ -424,26 +437,6 @@ await __PLUGIN_API__.call('showToast', '操作成功', 'success')
 - 权限：`ui:toast`
 - 参数：`(message: string, type?: 'info' | 'error' | 'success')`，默认 `info`
 
-### getSystemInfo — 读取系统与启动器信息
-
-读取操作系统、启动器与内存信息，可用于 `minLauncherVersion` 兼容检查或运行时判断平台。
-
-```js
-const info = await __PLUGIN_API__.call('getSystemInfo')
-// { Os, Architecture, OsName, OsVersion, OsVersionId, OsDisplayName, GitCommit,
-//   Memory, AvailableMemory,
-//   LauncherName, LauncherVersion, VersionType, Developers, CoreDependencies }
-```
-- 权限：`system:info`
-- 后台走 `GET /api/systeminfo`（与 `/api/system/info` 等价）
-- `GitCommit` 为启动器 Git 提交哈希；`Memory` / `AvailableMemory` 为字节数
-- 启动器元信息字段：
-  - `LauncherName`：启动器名称（如 `Qomicex Launcher`）
-  - `LauncherVersion`：启动器版本号（程序集版本，如 `0.1.1`）
-  - `VersionType`：版本类型，按版本号预发布标签动态判断（`alpha` / `beta` / `rc` / `dev`，否则 `stable`）
-  - `Developers`：`[{ name, role }]` 开发者列表
-  - `CoreDependencies`：`[{ name, version, license }]` 核心库列表（.NET / Tauri / Rust / Qomicex.Core 等）
-
 ### 文件拖放事件（file-drop）
 
 把文件拖入启动器窗口时，主窗口广播 `file-drop` 事件，payload 为拖入文件的**绝对路径数组**。前端（主界面）可用 `@tauri-apps/api/event` 监听：
@@ -459,27 +452,6 @@ listen<string[]>('file-drop', (event) => {
 - 路径为系统绝对路径，适合"拖文件自动填入路径"等交互
 - **注意**：前端原生 `drop` 事件的 `File` 对象拿不到 `.path`（Tauri 拦截系统拖放），必须走该事件
 - L2 沙箱插件如需使用：由主界面前端监听后经 `__pluginRegistry.call(pluginId, '方法', [paths])` / `callPlugin` 转发，插件侧 `registerMethod` 接收
-
-### openUrl — 用系统浏览器打开外部链接
-
-L2 沙箱内 `window.open` 会被 `sandbox` 拦截，请用此方法打开外链。
-
-```js
-await __PLUGIN_API__.call('openUrl', 'https://example.com')
-```
-- 权限：`system:notification`
-- 后台走 `POST /api/system/open-url`，仅接受 `http://` / `https://`
-
-### listPlugins — 列出已安装插件
-
-返回已安装插件列表（id/name/version/状态），可用于依赖检测或商店联动。
-
-```js
-const plugins = await __PLUGIN_API__.call('listPlugins')
-// [{ id, name, version, status }, ...]  status: 'installed'|'active'|'disabled'
-```
-- 权限：`plugin:list`
-- 后台走 `GET /api/plugins/`
 
 ### getThemeColor — 获取当前主题种子色
 

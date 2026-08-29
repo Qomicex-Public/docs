@@ -4,13 +4,13 @@
 
 ## 安装
 
-从[官方网站](https://www.qomicex.top/) 或 [Github发布页](https://github.com/Qomicex-Public/Qomicex.Tauri/releases/) 获取对应系统的安装包。
+从[官方网站](https://www.qomicex.top/) 或 [GitHub 发布页](https://github.com/Qomicex-Public/Qomicex.Tauri/releases/) 获取对应系统的安装包。
 
-![下载页面](../public/images/tutorial/download.webp)
+![下载页面](/images/tutorial/download.webp)
 
-选择合适的 **系统** 及 **架构** 与即可选择一个 **下载源** 进行下载
+选择合适的 **系统** 及 **架构**，即可选择一个 **下载源** 进行下载：
 
-国内推荐第一个和第二个，国外推荐第三个
+- 国内推荐第一个和第二个下载源，国外推荐第三个
 
 ## 快速开始
 
@@ -20,14 +20,12 @@
 
 ## 环境要求
 
-> 以下表格列出了当前支持的平台、最低版本要求和测试状态。
-
-
- 平台 | 支持架构 | 最低系统版本 | 支持状态 | 安装包/方式 |
+| 平台 | 支持架构 | 最低系统版本 | 支持状态 | 安装包/方式 |
 | :--- | :--- | :--- | :--- | :--- |
 | **Windows** | `x64`, `ARM64` | Windows 10 1809+ | ✅ | `.exe`（NSIS 安装器）|
 | **macOS** | `x64`（Intel）<br>`ARM64`（Apple Silicon） | macOS 10.15+ | ✅ | `.dmg` / `.app` |
 | **Linux** | `x64`, `ARM64`<br>`LoongArch64` (理论可用但无机器)<br>`RISC-V 64`(实验性,推进中) | Ubuntu 20.04+ / Fedora 34+ / glibc 2.28+ | ✅  | `.deb` / `.rpm` / `AppImage` |
+
 ## 下一步
 
 - 浏览[使用指南](./)

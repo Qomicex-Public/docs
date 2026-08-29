@@ -25,19 +25,34 @@ Qomicex 插件（`.qplugin`）本质是一个 **ZIP 压缩包**，内含一份 `
 
 ## 目录
 
+**入门**
+
+- [插件开发概览](./)
 - [从零开始开发第一个插件](./creating-plugin)
 - [React + Vite 插件开发](./react-plugin)
+
+**核心参考**
+
 - [manifest 清单详解](./manifest)
 - [插件 API 完整参考](./plugin-api)
 - [UI 组件库（.p-* 样式）](./plugin-ui)
 - [插件依赖与互调用](./dependencies)
+
+**进阶**
+
 - [WASM 插件（L3）](./wasm-plugin)
-- [l4 远程 WebView](./webview-l4)
+- [L4 远程 WebView](./webview-l4)
 - [悬浮窗开发](./overlay)
-- [CLI 工具参考](./cli)
 - [主题系统](./theme)
+
+**工具链与调试**
+
+- [CLI 工具参考](./cli)
 - [调试与热重载](./debugging)
 - [AI 辅助开发](./ai-development)
-- [灰度遥测](./telemetry)
+
+**发布与质量**
+
 - [发布规范](./publishing)
+- [灰度遥测](./telemetry)
 - [开发要点与避坑指南](./pitfalls)

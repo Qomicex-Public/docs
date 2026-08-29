@@ -68,13 +68,6 @@ try {
 - 必须声明 `entry.frontend`：只有声明了 frontend 的插件才会被激活（从而执行脚本、注册方法）。省略 frontend 的插件不会被激活，方法也就无法注册
 见 [layers 图层定义](./manifest#layers-图层定义)。
 :::
-::: warning
-库插件**必须有 `entry.frontend`**。只有声明了 frontend 的插件才会被激活（从而执行脚本、注册方法）。省略 frontend 的插件不会被激活，方法也就无法注册。
-:::
-
-::: warning
-库插件**必须有 `entry.frontend`**。只有声明了 frontend 的插件才会被激活（从而执行脚本、注册方法）。省略 frontend 的插件不会被激活，方法也就无法注册。
-:::
 
 ## 五、提供方：注册方法
 
@@ -85,7 +78,8 @@ try {
 <!DOCTYPE html>
 <html>
 <head>
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <!-- marked 必须随包分发（CSP 会拦截外部 CDN 脚本，见「开发要点与避坑指南」） -->
+  <script src="marked.min.js"></script>
 </head>
 <body>
   <div id="root">MarkdownLib 已加载</div>

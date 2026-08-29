@@ -9,9 +9,9 @@ Qomicex 提供多个模组资源下载加速镜像。使用方法很简单：**�
 | 镜像 1 | <https://mirror.qomicex.dpdns.org/> | Modrinth / CurseForge / Forge |
 | 镜像 2 | <https://mirror1.qomicex.dpdns.org/> | Modrinth / CurseForge / Forge |
 | 镜像 3 | <https://mirror.lenmei233.dpdns.org/> | Modrinth / CurseForge / Forge |
-| Modrinth 镜像 | <https://modrinth.lenmei233.dpdns.org/> | Modrinth CDN |
-| Modrinth 镜像 | <https://modrinth.qomicex.dpdns.org/> | Modrinth CDN |
-| Modrinth 镜像 | <https://modrinth1.qomicex.dpdns.org/> | Modrinth CDN |
+| Modrinth 镜像 1 | <https://modrinth.lenmei233.dpdns.org/> | Modrinth CDN |
+| Modrinth 镜像 2 | <https://modrinth.qomicex.dpdns.org/> | Modrinth CDN |
+| Modrinth 镜像 3 | <https://modrinth1.qomicex.dpdns.org/> | Modrinth CDN |
 
 多个节点自动故障转移，任选其一即可；某个不可用时换另一个。
 

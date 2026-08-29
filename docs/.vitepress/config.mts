@@ -39,23 +39,48 @@ export default defineConfig({
         {
           text: '插件开发',
           items: [
-            { text: '插件开发概览', link: '/plugins/' },
-            { text: '从零开发第一个插件', link: '/plugins/creating-plugin' },
-            { text: 'React + Vite 插件开发', link: '/plugins/react-plugin' },
-            { text: 'manifest 清单详解', link: '/plugins/manifest' },
-            { text: '插件 API 完整参考', link: '/plugins/plugin-api' },
-            { text: 'UI 组件库（.p-* 样式）', link: '/plugins/plugin-ui' },
-            { text: '插件依赖与互调用', link: '/plugins/dependencies' },
-            { text: 'WASM 插件（L3）', link: '/plugins/wasm-plugin' },
-            { text: 'l4 远程 WebView', link: '/plugins/webview-l4' },
-            { text: '悬浮窗开发', link: '/plugins/overlay' },
-            { text: 'CLI 工具参考', link: '/plugins/cli' },
-            { text: '主题系统', link: '/plugins/theme' },
-            { text: '调试与热重载', link: '/plugins/debugging' },
-            { text: 'AI 辅助开发', link: '/plugins/ai-development' },
-            { text: '灰度遥测', link: '/plugins/telemetry' },
-            { text: '发布规范', link: '/plugins/publishing' },
-            { text: '开发要点与避坑指南', link: '/plugins/pitfalls' }
+            {
+              text: '入门',
+              items: [
+                { text: '插件开发概览', link: '/plugins/' },
+                { text: '从零开发第一个插件', link: '/plugins/creating-plugin' },
+                { text: 'React + Vite 插件开发', link: '/plugins/react-plugin' }
+              ]
+            },
+            {
+              text: '核心参考',
+              items: [
+                { text: 'manifest 清单详解', link: '/plugins/manifest' },
+                { text: '插件 API 完整参考', link: '/plugins/plugin-api' },
+                { text: 'UI 组件库（.p-* 样式）', link: '/plugins/plugin-ui' },
+                { text: '插件依赖与互调用', link: '/plugins/dependencies' }
+              ]
+            },
+            {
+              text: '进阶',
+              items: [
+                { text: 'WASM 插件（L3）', link: '/plugins/wasm-plugin' },
+                { text: 'L4 远程 WebView', link: '/plugins/webview-l4' },
+                { text: '悬浮窗开发', link: '/plugins/overlay' },
+                { text: '主题系统', link: '/plugins/theme' }
+              ]
+            },
+            {
+              text: '工具链与调试',
+              items: [
+                { text: 'CLI 工具参考', link: '/plugins/cli' },
+                { text: '调试与热重载', link: '/plugins/debugging' },
+                { text: 'AI 辅助开发', link: '/plugins/ai-development' }
+              ]
+            },
+            {
+              text: '发布与质量',
+              items: [
+                { text: '发布规范', link: '/plugins/publishing' },
+                { text: '灰度遥测', link: '/plugins/telemetry' },
+                { text: '开发要点与避坑指南', link: '/plugins/pitfalls' }
+              ]
+            }
           ]
         }
       ],

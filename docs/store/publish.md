@@ -27,11 +27,11 @@ my-plugin.zip
 
 ```json
 {
-  "id": "my-plugin",
+  "id": "dev.example.my-plugin",
   "name": "我的插件",
   "version": "1.0.0",
   "minLauncherVersion": "1.0.0",
-  "layers": ["l3"],
+  "layers": ["l2"],
   "permissions": [],
   "entry": { "frontend": "index.html" }
 }
@@ -39,10 +39,10 @@ my-plugin.zip
 
 | 字段 | 必填 | 说明 |
 | :--- | :--- | :--- |
-| `id` | ✅ | 插件唯一标识，建议与商店 slug 一致 |
+| `id` | ✅ | 插件唯一标识，建议反向域名风格（如 `dev.example.my-plugin`），一经发布不要更改 |
 | `name` / `version` | ✅ | `version` 必须是合法 semver（如 `1.2.3`） |
 | `minLauncherVersion` | ✅ | 最低启动器版本 |
-| `layers` | ✅ | 权限层级数组：`l0`~`l3` |
+| `layers` | ✅ | 图层层级数组：`l0`~`l4`（含页面脚本的插件建议 `["l2"]`） |
 | `permissions` | ✅ | 权限列表（可为空数组） |
 | `entry` | ✅ | 至少提供 `frontend`/`backend`/`theme` 之一 |
 

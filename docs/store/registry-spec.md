@@ -243,7 +243,7 @@ qomicex verify --package test.qplugin   # Ed25519 验签，主源镜像应同样
 
 ## 8. 启动器集成方案（TODO）
 
-当前 `D:\qomicex-launcher` 后端 `services/plugin_store.rs` 使用固定的 `QOMICEX_STORE_API_BASE` 环境变量作为**单源代理**。多源集成的改动点：
+当前启动器后端 `services/plugin_store.rs` 使用固定的 `QOMICEX_STORE_API_BASE` 环境变量作为**单源代理**。多源集成的改动点：
 
 | 层 | 改动 | 工作量 |
 | :--- | :--- | :--- |
