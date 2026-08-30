@@ -43,7 +43,7 @@ npm publish
 
 | 命令 | 作用 |
 |------|------|
-| `qomicex create <id>` | 从内置模板生成合法插件项目 |
+| `qomicex create <id> [--template <react\|html\|lib\|wasm>] [-t <...>]` | 从内置模板生成合法插件项目（默认 react） |
 | `qomicex dev [--port <n>]` | 起本地调试环境（仓库内 harness 模式 / 仓库外裸 Vite） |
 | `qomicex pack [--out-dir <d>] [--version <v>] [--key <k>] [--skip-build]` | 构建 → 打包 `.qplugin`（可选 `--key` 签名） |
 | `qomicex verify [--package <f>]` | 校验 manifest / 权限 / 长循环 / 签名 |
@@ -58,24 +58,46 @@ npm publish
 ## create
 
 ```bash
-qomicex create com.example.demo
+qomicex create com.example.demo                  # 默认 react 模板
+qomicex create com.example.html --template html   # 纯 HTML/CSS/JS（-t html 短参数也可）
+qomicex create com.example.lib -t lib             # 纯库插件（无 UI，registerMethod 供调用）
+qomicex create com.example.wasm --template wasm   # L3 WASM 插件（Rust + wasmtime）
 ```
 
-从内置模板生成合法插件项目（Vite + React 19 + TS + Tailwind + `@qomicex/plugin-ui`），自动替换 `manifest.json` / `package.json` 中的 id。
+从内置模板生成合法插件项目，自动替换 `manifest.json` / `package.json` / `Cargo.toml` / `src/lib.rs` 中的 id。四种模板：
 
-- 模板 `layers:["l2"]`（iframe 沙箱默认渲染）
-- 权限最小集：`config:read` / `ui:toast` / `network:cors_proxy`
-- 生成后提示 `pnpm install`
+| 模板 | `--template`/`-t` | 结构 | 构建 |
+|------|-------------------|------|------|
+| **react**（默认） | `react` | Vite + React 19 + TS + Tailwind + `@qomicex/plugin-ui`，`layers:["l2"]` | `pnpm run build`（tsc + vite） |
+| **html** | `html` | 纯 HTML/CSS/JS（无框架），`src/` + esbuild 打包 → `dist/` | `pnpm run build`（esbuild） |
+| **lib** | `lib` | 纯库插件（无 UI），`src/main.js` 注册方法供其他插件调用，`layers:["l3"]` | `pnpm run build`（esbuild） |
+| **wasm** | `wasm` | L3 WASM 插件（Rust cdylib + `src/lib.rs`），`layers:["l3"]`、无 entry | `bash scripts/build.sh` / `pwsh scripts/build.ps1`（cargo build） |
+
+- react 模板权限最小集：`config:read` / `ui:toast` / `network:cors_proxy`；html 模板为 `config:read` / `ui:toast`；lib 模板 `permissions:["config:write"]`；wasm 模板 `permissions:["wasm:execute"]`
+- lib 模板无 `contributes.menuItems`（不创建侧边栏），参照 [MarkdownLibrary](https://github.com/Qomicex-Public/Qomicex.Plugin-MarkdownLibrary)
+- wasm 模板参照 [WASM 插件（L3）](./wasm-plugin)，`src/lib.rs` 导入 `qomicex` host 模块、导出 `on_load`/`on_unload`/`get_manifest`
+- 生成后提示 `pnpm install`（wasm 为 `rustup target add wasm32-unknown-unknown`）
 
 **实例**：
 
 ```bash
-# 生成一个漫画汉化小组的连字插件项目
+# 生成一个漫画汉化小组的连字插件项目（react 默认）
 qomicex create com.acgstudio.ligatures
 cd com.acgstudio.ligatures
 pnpm install
 qomicex verify    # 立即校验，确认 0 error
+
+# 生成纯 html 插件
+qomicex create dev.example.noui --template html
+
+# 生成纯库插件（提供方法供其他插件调用）
+qomicex create top.example.markdownlib -t lib
+
+# 生成 L3 WASM 插件（Rust）
+qomicex create dev.example.wasmplugin --template wasm
 ```
+
+> `pack` / `verify` / `lint` / `publish` 对四种模板均适用：有 `package.json` 时 `pnpm run build`，有 `Cargo.toml` 时 `cargo build`，纯静态项目（两者皆无）自动跳过构建直接打包。L3 wasm 插件 verify 跳过 JS 权限扫描（`wasm:execute` 由网关消费）。
 
 ## dev
 
@@ -92,14 +114,14 @@ qomicex dev --port 3000
 ## pack
 
 ```bash
-qomicex pack                          # tsc && vite build → release/<id>-<version>.qplugin
+qomicex pack                          # 有 package.json → pnpm run build；无则跳过构建直接打包
 qomicex pack --version 0.2.0          # 覆盖 manifest 版本号
 qomicex pack --key ./dev-key.pem      # 附签名（仅 signature.json；完整证书链请用 publish）
 qomicex pack --skip-build             # 跳过构建（复用现有 dist）
 qomicex pack --out-dir ./dist-releases # 指定输出目录（默认 release/）
 ```
 
-`.qplugin` = zip，`manifest.json` 在根 + `dist/**`。`entry.theme` / `contributes.overlay.file` 若引用 `dist/` 下文件但源码在根目录，会自动拷入。
+`.qplugin` = zip，`manifest.json` 在根 + `dist/**`（或 `plugin.wasm`）。构建自动检测：项目有 `package.json` 且含 `scripts.build` 时走 `pnpm run build`（react/html/lib）；有 `Cargo.toml` 时走 `scripts/build.sh` / `build.ps1`（wasm）；两者皆无则跳过（纯静态项目）。无 `dist/` 时回退收集 manifest 引用的根文件与 `plugin.wasm`。`entry.theme` / `contributes.overlay.file` 若引用 `dist/` 下文件但源码在根目录，会自动拷入。
 
 **实例**（日常迭代出包）：
 
