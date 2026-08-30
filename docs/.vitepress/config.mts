@@ -62,6 +62,7 @@ export default defineConfig({
                 { text: 'WASM 插件（L3）', link: '/plugins/wasm-plugin' },
                 { text: 'L4 远程 WebView', link: '/plugins/webview-l4' },
                 { text: '悬浮窗开发', link: '/plugins/overlay' },
+                { text: 'Hook 系统（拦截启动器方法）', link: '/plugins/hooks' },
                 { text: '主题系统', link: '/plugins/theme' }
               ]
             },

@@ -29,10 +29,11 @@ const __PLUGIN_API__ = window.__PLUGIN_API__
 // ① 通用 call 方式（绝大多数方法）
 const data = await __PLUGIN_API__.call('getSettings')
 
-// ② 专用快捷方式（仅以下 3 个）
+// ② 专用快捷方式（以下 4 个）
 await __PLUGIN_API__.registerMethod('name', fn)      // 注册方法
 await __PLUGIN_API__.callPlugin('id', 'method', ...) // 调用其他插件方法
 await __PLUGIN_API__.proxyFetchStream(req, handlers) // 流式请求
+await __PLUGIN_API__.registerHook('method', handler) // 注册启动器方法 Hook
 ```
 
 ## 权限机制
@@ -84,6 +85,7 @@ Permission denied: requires <权限id>
 | `shell:execute` | 执行系统命令 | 危险 |
 | `filesystem:read` | 读取文件系统 | 警告 |
 | `filesystem:write` | 写入文件系统 | 危险 |
+| `hook:register` | 钩住启动器方法（拦截/修改参数、阻止执行） | 危险 |
 | `download:manage` | 管理下载中心任务 | 警告 |
 
 ::: tip
@@ -260,6 +262,23 @@ try {
 - 权限：`network:fetch`
 - 参数：`(pluginId: string, method: string, ...args)`
 - 目标未安装 / 未激活 / 方法未注册 → reject
+
+### registerHook — 注册启动器方法 Hook
+
+将当前插件注册为启动器某方法的拦截者，在该方法执行前后注入逻辑（修改参数/返回值、阻止执行、完全替换实现）。
+
+```js
+__PLUGIN_API__.registerHook('scanVersions', async (ctx, next) => {
+  ctx.args[0] = ctx.args[0] + '/custom'   // before：修改参数
+  await next()                              // 执行默认实现
+  ctx.result = [...ctx.result, { name: 'virtual-1.20.1', gameVersion: '1.20.1', state: 'Available' }]  // after：修改结果
+})
+```
+- 权限：`hook:register`（**危险**）
+- 参数：`(method: string, handler: (ctx, next) => Promise<void>)`
+- `handler` 为 Koa 式洋葱中间件：`next()` 前改 `ctx.args`，`next()` 后改 `ctx.result`，`ctx.prevent()` 阻止默认实现
+- 插件停用时自动注销其全部 hooks
+- 详细见 [Hook 系统](./hooks)
 
 ### callWasm — 调用 WASM 插件导出函数
 

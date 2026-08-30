@@ -17,6 +17,7 @@ Qomicex 插件（`.qplugin`）本质是一个 **ZIP 压缩包**，内含一份 `
 | 插件缓存 | 读写插件自己的 `cache.json`（`setCache` / `getCache`，支持 TTL 过期） |
 | 网络请求 | 直接请求后端 API（`callBackend`）或经 CORS 代理访问外网（`proxyFetch` / `proxyFetchStream`） |
 | 插件间调用 | 注册方法供其他插件调用（`registerMethod` / `callPlugin`） |
+| 拦截启动器方法 | 通过 Hook 系统在启动器方法前后注入逻辑（修改参数/返回值、阻止执行、完全替换） |
 | 主题跟随 | 自动跟随启动器明暗主题（CSS 变量注入） |
 
 ## 前置插件（Libraries）
@@ -43,6 +44,7 @@ Qomicex 插件（`.qplugin`）本质是一个 **ZIP 压缩包**，内含一份 `
 - [WASM 插件（L3）](./wasm-plugin)
 - [L4 远程 WebView](./webview-l4)
 - [悬浮窗开发](./overlay)
+- [Hook 系统（拦截启动器方法）](./hooks)
 - [主题系统](./theme)
 
 **工具链与调试**

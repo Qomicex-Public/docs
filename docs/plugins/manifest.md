@@ -74,6 +74,27 @@
 | `settingsPages` | string[] | 保留，当前未使用 |
 | `iconTheme` | string | 图标主题：`.qtheme` 包内 `icon-theme.json` 的相对路径（如 `"dist/icon-theme.json"`），激活时经主题管理器注册。详见 [主题系统](./theme#图标主题icon-themejson) |
 | `fontLinks` | string[] | 字体/连字贡献：字体 CSS/CDN URL 列表，激活时自动注入 `<link rel="stylesheet">`，停用时移除。详见 [字体/连字贡献](./theme#字体连字贡献) |
+| `hooks` | PluginHookDecl[] | 声明可被本插件 hook 的启动器方法。需同时声明 `hook:register` 权限。详见 [Hook 系统](./hooks) |
+
+### hooks 数组元素
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `method` | string | 启动器可 hook 的方法名（如 `"scanVersions"`、`"launchInstance"`） |
+| `priority` | number | 执行顺序优先级，数字越小越先执行（默认 100）。同优先级按注册先后 |
+
+声明用于文档化与权限预检；实际处理函数在运行时用 `__PLUGIN_API__.registerHook` 注册。
+
+```json
+{
+  "permissions": ["hook:register"],
+  "contributes": {
+    "hooks": [
+      { "method": "scanVersions", "priority": 10 }
+    ]
+  }
+}
+```
 
 ### menuItems 数组元素
 
