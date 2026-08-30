@@ -4,6 +4,14 @@
 
 ## 快速开始
 
+**推荐：直接用 `qomicex dev`**（仓库内插件自动走 harness 模式）：
+
+```bash
+qomicex dev    # 在插件仓库内运行，自动检测并启动 harness
+```
+
+或直接调 harness 脚本：
+
 ```bash
 # 前置：插件依赖已装好、plugin-ui 已构建
 pnpm --filter @qomicex/plugin-ui build

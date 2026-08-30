@@ -1,66 +1,53 @@
 # 从零开始开发第一个插件
 
-本教程带你从零创建一个最小可运行的 Qomicex 插件。
+本教程带你从零创建一个最小可运行的 Qomicex 插件。**推荐使用 `qomicex` CLI 脚手架起步**（自动生成合法项目结构），也可手动编写（见下方替代方案）。
 
 ## 前置条件
 
 - 已安装 Qomicex 启动器（用于测试）
-- 一个文本编辑器，可选装 Node.js（用于本地预览）
+- [qomicex CLI](./cli)（Node.js ≥ 20）：
 
-## 一、理解插件结构
-
-一个插件包的最简结构：
-
-```
-my-plugin/
-└── manifest.json          # 清单文件（必须，位于包根目录）
+```bash
+pnpm --filter @qomicex/cli build
+pnpm --filter @qomicex/cli link   # 链接到 PATH，之后可直接用 qomicex
 ```
 
-带前端资源的插件：
-
-```
-my-plugin/
-├── manifest.json
-└── dist/
-    ├── index.html         # 插件页面（entry.frontend 指向）
-    └── app.js             # 页面脚本
-```
-
-::: tip
-插件**不一定需要前端文件**。纯功能插件（只提供 API 或注册方法）可以只包含 `manifest.json`。但注意：只有声明了 `entry.frontend` 的插件才会被激活（详见 [manifest 详解](./manifest)）。
+::: tip 环境诊断
+首次使用前可跑 `qomicex doctor` 检查 Node / pnpm / 插件项目环境是否就绪（纯只读，不修改任何文件）。
 :::
 
-## 二、编写 manifest.json
+## 一、用 CLI 生成项目（推荐）
+
+```bash
+qomicex create dev.example.helloworld
+cd dev.example.helloworld
+pnpm install
+qomicex verify     # 立即校验，确认 0 error
+```
+
+生成的项目是 Vite + React 19 + TS + Tailwind 工程化结构（详见 [React + Vite 插件开发](./react-plugin)），`manifest.json` 已就位：
 
 ```json
 {
   "id": "dev.example.helloworld",
   "name": "Hello World",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "minLauncherVersion": "0.1.0",
-  "layers": ["l2", "l3"],
-  "permissions": ["ui:inject_sidebar"],
-  "entry": {
-    "frontend": "dist/index.html"
-  },
-  "contributes": {
-    "menuItems": [
-      { "path": "/plugins/p/dev.example.helloworld", "label": "Hello", "icon": "H" }
-    ]
-  }
+  "layers": ["l2"],
+  "permissions": ["config:read", "ui:toast", "network:cors_proxy"],
+  "entry": { "frontend": "dist/index.html" }
 }
 ```
 
 关键字段：
 - `id`：插件唯一 ID，同时是安装目录名（`plugins/{id}/`），**一经发布不要更改**
-- `layers`：图层声明。含脚本页面的插件建议 `["l2", "l3"]`（**默认 iframe 沙箱渲染**，与声明 `l2` 行为一致；若需内联渲染须在 manifest 显式声明 `"render": "inline"`。激活取决于 `entry.frontend` 是否存在，详见 [layers 图层定义](./manifest#layers-图层定义)）
+- `layers`：图层声明。含脚本页面的插件建议 `["l2", "l3"]`（**默认 iframe 沙箱渲染**；若需内联渲染须在 manifest 显式声明 `"render": "inline"`。激活取决于 `entry.frontend` 是否存在，详见 [layers 图层定义](./manifest#layers-图层定义)）
 - `permissions`：插件要用的权限（见 [插件 API 完整参考](./plugin-api)）
 - `entry.frontend`：插件页面入口，`.qplugin` 包内的相对路径
-- `contributes.menuItems`：在侧边栏底部创建入口
 
-## 三、编写插件页面
+## 二、编写插件页面
 
-创建 `dist/index.html`：
+创建 `src/App.tsx`（React）或按需修改。以纯 HTML 为例，可在 `index.html` 中直接写：
 
 ```html
 <!DOCTYPE html>
@@ -88,9 +75,25 @@ my-plugin/
 ::: tip
 - 样式使用启动器提供的 `.p-*` 组件类（如 `.p-card`、`.p-btn`），自动跟随明暗主题。完整清单见 [UI 组件库](./plugin-ui)。
 - 插件脚本通过全局对象 `window.__PLUGIN_API__` 与启动器交互。注意：插件激活时脚本即执行（内联或 L2 沙箱），无需进入插件页面，详见 [渲染原理](./pitfalls)。
+- 工程化插件用 `@qomicex/plugin-ui` React 组件 + Tailwind，见 [React + Vite 插件开发](./react-plugin)。
 :::
 
-## 四、打包插件
+## 三、打包插件
+
+### 用 CLI 打包（推荐）
+
+```bash
+qomicex pack                # tsc && vite build → release/<id>-<version>.qplugin
+qomicex pack --key ./dev-key.pem    # 附签名（离线可验）
+```
+
+`.qplugin` 即 zip，`manifest.json` 在根 + `dist/**`。`entry.theme` / `contributes.overlay.file` 若引用 `dist/` 下文件但源码在根目录，`pack` 会自动拷入。
+
+::: warning
+`manifest.json` 必须在压缩包**根目录**，放在子目录里会安装失败。
+:::
+
+### 不用 CLI 的手动打包（替代方案）
 
 1. 将 `manifest.json` 与资源目录放入一个文件夹
 2. 用任意 ZIP 工具压缩，确保 `manifest.json` 位于 **ZIP 根目录**
@@ -100,18 +103,18 @@ my-plugin/
 my-plugin.qplugin          # 即 zip，manifest.json 在根
 ```
 
-::: warning
-`manifest.json` 必须在压缩包**根目录**，放在子目录里会安装失败。
-:::
-
-## 五、安装测试
+## 四、安装测试
 
 1. 打开 Qomicex 启动器 → 设置 → 插件
 2. 点击「安装插件」，选择你的 `.qplugin` 文件
 3. 安装成功后，在插件列表看到卡片，切换开关启用（需重启启动器生效）
 4. 重启后，侧边栏出现 "Hello" 入口，点击进入插件页面
 
-## 六、常见问题速查
+::: tip 开发期迭代
+开发期可用 `qomicex dev` 走调试 harness（无需启动 Tauri/后端，浏览器热重载），详见 [调试与热重载](./debugging)。
+:::
+
+## 五、常见问题速查
 
 | 现象 | 原因 |
 |------|------|
@@ -119,8 +122,11 @@ my-plugin.qplugin          # 即 zip，manifest.json 在根
 | 插件列表出现但侧边栏没入口 | `contributes.menuItems` 未声明，或未启用插件 |
 | 页面空白 / 脚本不执行 | 插件未激活或激活时序问题（见 [避坑指南](./pitfalls)） |
 | 调用 API 报 `Permission denied` | manifest 的 `permissions` 未包含对应权限 |
+| `qomicex pack` 报错 | 先跑 `qomicex verify` / `qomicex lint` 定位问题 |
 
 ## 下一步
 
 - 了解 manifest 全部字段：[manifest 清单详解](./manifest)
 - 了解全部可调用的 API：[插件 API 完整参考](./plugin-api)
+- 工程化开发：[React + Vite 插件开发](./react-plugin)
+- 完整 CLI 命令：[CLI 工具参考](./cli)

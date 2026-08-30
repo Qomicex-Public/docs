@@ -2,7 +2,7 @@
 
 针对**有 UI 的正式插件**，推荐使用 React 19 + Vite 7 + TypeScript + Tailwind 的工程化开发方式，并配合启动器内置组件库 `@qomicex/plugin-ui`。相比纯 HTML 手写，你能获得组件复用、类型检查、HMR 与按需打包等能力。
 
-本教程基于仓库内示范包 `plugins-dev/hello-plugin/` 编写，可对照阅读。
+**推荐用 `qomicex create` 脚手架生成工程**（自动配好全部配置），本教程讲解脚手架产物与各配置的作用，方便按需调整。
 
 ## 一、为什么用 Vite
 
@@ -10,19 +10,25 @@
 - **组件复用**：直接用启动器同款 `@qomicex/plugin-ui` 组件（Card / Button / Dialog / Select 等），样式自动跟随主题
 - **产物纯净**：仅打包用到的组件，CSS 按需生成（Tree-shaking + Tailwind JIT）
 
-## 二、项目结构
+## 二、用 CLI 生成工程（推荐）
+
+```bash
+qomicex create com.example.myplugin
+cd com.example.myplugin
+pnpm install
+```
+
+生成的项目结构（Vite + React 19 + TS + Tailwind + `@qomicex/plugin-ui`，`manifest.json`/`package.json` 已替换 id）：
 
 ```
-hello-plugin/
+my-plugin/
 ├── manifest.json        # 插件清单（发布时打进 .qplugin 根目录）
-├── overlay.html         # 悬浮窗页面（打包时拷贝到 dist/）
-├── theme.css            # 主题注入（打包时拷贝到 dist/）
 ├── index.html           # Vite 入口
-├── vite.config.ts       # 必须 base: './'
-├── tailwind.config.js   # 引用 @qomicex/plugin-ui/tailwind-preset
+├── vite.config.ts       # 已设 base: './'
+├── tailwind.config.js   # 已引用 @qomicex/plugin-ui/tailwind-preset
 ├── postcss.config.js
 ├── tsconfig.json
-├── package.json
+├── package.json         # scripts: dev/build/package
 └── src/
     ├── main.tsx         # React 入口，挂载 #root
     ├── api.ts           # window.__PLUGIN_API__ 的类型化封装
@@ -30,7 +36,11 @@ hello-plugin/
     └── index.css        # Tailwind 指令
 ```
 
-## 三、初始化工程
+::: tip
+脚手架模板来自 `qomicex create` 内置模板（`packages/qomicex-cli/templates/`）。不满足需求时可在此基础上增删。
+:::
+
+### 不用 CLI 的手动初始化（替代方案）
 
 ```bash
 mkdir my-plugin && cd my-plugin
@@ -142,7 +152,7 @@ body,
 }
 ```
 
-## 四、插件 API 的类型化封装
+## 三、插件 API 的类型化封装
 
 插件脚本通过 `window.__PLUGIN_API__` 与启动器交互。建议封装为类型化模块，并处理**独立 `npm run dev`（浏览器直开）时无 API 桥**的情况：
 
@@ -175,7 +185,7 @@ export function getPluginId(): string {
 }
 ```
 
-## 五、编写插件页面
+## 四、编写插件页面
 
 `src/main.tsx`：
 
@@ -241,7 +251,7 @@ export default function App() {
 `@qomicex/plugin-ui` 导出：`Button` / `Badge` / `Card`(Header/Title/Description/Content/Footer) / `Checkbox` / `Combobox` / `Dialog` / `Input` / `Label` / `Select`(+`SelectOption`/`SelectDivider`) / `Separator` / `Table` / `Tabs` / `Textarea` / `Tooltip` / `useMessageBox`(+`MessageBoxProvider`) / `cn`。完整用法见 [plugin-ui 组件库](./plugin-ui)。
 :::
 
-## 六、悬浮窗与主题文件
+## 五、悬浮窗与主题文件
 
 `overlay.html` 和 `theme.css` 不属于 Vite 构建产物，需在打包时手动拷贝到 `dist/`：
 
@@ -263,9 +273,21 @@ export default function App() {
 </script>
 ```
 
-## 七、打包 .qplugin
+## 六、打包 .qplugin
 
-### 打包脚本（scripts/build.sh）
+### 用 CLI 打包（推荐）
+
+```bash
+qomicex pack                      # tsc && vite build → release/<id>-<version>.qplugin
+qomicex pack --key ./dev-key.pem  # 附 Ed25519 签名（离线可验）
+qomicex pack --version 0.2.0      # 覆盖版本号
+```
+
+`qomicex pack` 自动处理：构建前端、拷贝根目录的 `overlay.html` / `theme.css` 到 `dist/`、组装 zip（`manifest.json` 在根 + `dist/**`）。`entry.theme` / `contributes.overlay.file` 若引用 `dist/` 下文件但源码在根目录，会自动拷入。
+
+### 不用 CLI 的手动打包（替代方案）
+
+#### 打包脚本（scripts/build.sh）
 
 ```bash
 #!/usr/bin/env bash
@@ -323,14 +345,14 @@ my-plugin.qplugin（即 zip）
 后端按 `plugins/{id}/{path}` 解析文件，`entry.frontend: "dist/index.html"` 会去取 `plugins/{id}/dist/index.html`。**`dist/` 子目录必须保留在 zip 里**——如果把 `dist` 内的文件提升到 zip 根目录，安装后 `dist/index.html`、`dist/theme.css`、`dist/overlay.html` 全部 404（页面空白、无样式、悬浮窗打不开）。
 :::
 
-## 八、安装测试
+## 七、安装测试
 
-1. `bash scripts/build.sh 0.1.0`（Windows：`pwsh ./scripts/build.ps1 0.1.0`）
+1. `qomicex pack`（或手动 `bash scripts/build.sh 0.1.0`，Windows：`pwsh ./scripts/build.ps1 0.1.0`）
 2. 启动器 → 插件 → 上传 `release/my-plugin-0.1.0.qplugin`
 3. 启用插件 → 重启启动器 → 侧边栏进入插件页
 
 ::: tip 开发期迭代
-上传安装后修改代码需**重新打包再上传**（后端按文件实时读盘，无缓存）。开发期可考虑把 `release/xxx.qplugin` 解压后直接覆盖安装目录 `plugins/{id}/`，省去上传步骤。
+上传安装后修改代码需**重新打包再上传**（后端按文件实时读盘，无缓存）。开发期更推荐用 `qomicex dev` 走调试 harness——浏览器热重载，无需启动 Tauri/后端（详见 [调试与热重载](./debugging)）。
 :::
 
 ## 常见问题
@@ -348,4 +370,6 @@ my-plugin.qplugin（即 zip）
 - 完整 API 参考：[插件 API 完整参考](./plugin-api)
 - 组件库：[UI 组件库（.p-* 样式）](./plugin-ui)
 - 悬浮窗：[悬浮窗开发](./overlay)
+- CLI 命令参考：[CLI 工具参考](./cli)
+- 调试与热重载：[调试与热重载](./debugging)
 - 发布规范：[发布规范](./publishing)

@@ -2,6 +2,10 @@
 
 `manifest.json` 是插件的身份文件，位于 `.qplugin` 包根目录。它描述插件的元信息、权限、入口和扩展点。
 
+::: tip
+推荐用 `qomicex create <id>` 生成合法 manifest 骨架（自动配好 id / layers / permissions / entry），再用 `qomicex verify` 校验合法性。本页讲解全部字段，方便按需调整。
+:::
+
 ## 完整结构
 
 ```json

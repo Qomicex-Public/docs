@@ -117,7 +117,20 @@ await __PLUGIN_API__.call('overlay.destroy', overlayId)  // 销毁
 
 权限：`ui:sub_window`
 
-## 四、注意事项
+## 四、打包发布
+
+悬浮窗 HTML 需随包分发（`overlay.file` 指向包内路径）。用 CLI 打包时 `qomicex pack` 会自动把项目根目录的 `overlay.html` 拷入 `dist/`：
+
+```bash
+qomicex pack                # dist/overlay.html 自动入包
+qomicex pack --key ./dev-key.pem    # 附签名
+```
+
+::: tip
+若 `overlay.file` 引用 `dist/overlay.html` 但源码 `overlay.html` 在项目根目录，`qomicex pack` 会自动拷入；手动打包时需自行拷贝（见 [React + Vite 插件开发](./react-plugin) 打包章节）。
+:::
+
+## 五、注意事项
 
 - 悬浮窗 HTML 内容会被启动器处理：抽离 `<style>`/`<link>` 到 head、剥壳 `<html>/<head>/<body>`、注入组件样式
 - 悬浮窗可拖拽（点击非按钮区域），`resizable: true` 时右下角可缩放（最小 200×120）

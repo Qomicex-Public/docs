@@ -2,6 +2,10 @@
 
 本文档说明插件打包格式、签名、分发渠道、更新与发布检查清单。
 
+::: tip
+推荐用 `qomicex` CLI 完成打包 → 签名 → 发布全流程：`qomicex pack` 打包、`qomicex verify --package` 验签、`qomicex publish` 一键发布。完整命令见 [CLI 工具参考](./cli)。
+:::
+
 ## 一、打包格式
 
 `.qplugin` 本质是 **ZIP 压缩包**，其中 `manifest.json` 必须位于**根目录**。

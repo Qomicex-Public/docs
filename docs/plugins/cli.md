@@ -289,7 +289,7 @@ openssl pkey -in dev-key.pem -outform DER | tail -c 32 | base64
 
 ## AI 辅助开发
 
-CLI 随包分发 **AI skill 包**（`skills/qomicex-plugin/`），供 AI agent（Claude / opencode / Cursor 等）在写插件时加载，获得准确且不过时的 manifest 字段、权限目录、桥 API 签名、主题 token、签名与调试流程——避免 AI 臆造字段。详见 [AI 辅助开发](./ai-development)。
+Qomicex 的插件开发 **AI skill 包**独立维护在 [qomicex-plugin-skills](https://github.com/Qomicex-Public/qomicex-plugin-skills) 仓库，供 AI agent（Claude / opencode / Cursor 等）在写插件时加载，获得准确且不过时的 manifest 字段、权限目录、桥 API 签名、主题 token、签名与调试流程——避免 AI 臆造字段。详见 [AI 辅助开发](./ai-development)。
 
 ## 设计说明
 
