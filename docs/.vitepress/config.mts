@@ -63,7 +63,8 @@ export default defineConfig({
             { text: '常见名词一览', link: '/guide/glossary' },
             { text: '常见问题', link: '/guide/faq' },
             { text: '问题反馈', link: '/guide/report-issue' },
-            { text: '优化配置', link: '/guide/optimize' }
+            { text: '优化配置', link: '/guide/optimize' },
+            { text: '版权与隐私', link: '/guide/legal' }
           ]
         }
       ],

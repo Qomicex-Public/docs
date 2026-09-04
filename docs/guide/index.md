@@ -34,3 +34,4 @@
 - [常见问题](./faq)
 - [问题反馈](./report-issue)
 - [优化配置](./optimize)
+- [版权与隐私](./legal)
