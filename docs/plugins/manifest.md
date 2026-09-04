@@ -73,6 +73,7 @@
 |------|------|------|
 | `menuItems` | PluginMenuItem[] | 侧边栏底部入口列表 |
 | `overlay` | PluginOverlayConfig | 悬浮窗配置 |
+| `slots` | PluginSlotContribution[] | 主界面槽位注入：`header:right`（标题栏右侧）/ `dashboard:widgets`（主页小组件网格）。详见 [主页小组件](./dashboard-widget) |
 | `downloadSources` | string[] | 保留，当前未使用 |
 | `commands` | string[] | 保留，当前未使用 |
 | `settingsPages` | string[] | 保留，当前未使用 |
