@@ -27,11 +27,43 @@ export default defineConfig({
     sidebar: {
       '/guide/': [
         {
-          text: '使用指南',
+          text: '开始',
           items: [
             { text: '简介', link: '/guide/' },
             { text: '快速上手', link: '/guide/getting-started' },
+            { text: '初次启动', link: '/guide/first-start' }
+          ]
+        },
+        {
+          text: '功能',
+          items: [
+            { text: '主页小组件', link: '/guide/dashboard-widget' },
+            { text: '安装游戏', link: '/guide/installing-games' },
+            { text: '实例管理', link: '/guide/instances' },
+            { text: '整合包支持', link: '/guide/modpack-support' },
+            { text: '资源中心', link: '/guide/resource-center' },
+            { text: '下载中心', link: '/guide/downloads' },
+            { text: '账户管理', link: '/guide/accounts' },
+            { text: '多人联机', link: '/guide/connect' },
+            { text: '运行中', link: '/guide/running' },
+            { text: '日志分析', link: '/guide/log-analysis' },
+            { text: '插件系统', link: '/guide/plugins' }
+          ]
+        },
+        {
+          text: '设置与网络',
+          items: [
+            { text: '设置详解', link: '/guide/settings' },
             { text: '镜像源', link: '/guide/mirror' }
+          ]
+        },
+        {
+          text: '帮助与优化',
+          items: [
+            { text: '常见名词一览', link: '/guide/glossary' },
+            { text: '常见问题', link: '/guide/faq' },
+            { text: '问题反馈', link: '/guide/report-issue' },
+            { text: '优化配置', link: '/guide/optimize' }
           ]
         }
       ],
@@ -62,6 +94,7 @@ export default defineConfig({
                 { text: 'WASM 插件（L3）', link: '/plugins/wasm-plugin' },
                 { text: 'L4 远程 WebView', link: '/plugins/webview-l4' },
                 { text: '悬浮窗开发', link: '/plugins/overlay' },
+                { text: '主页小组件（dashboard:widgets）', link: '/plugins/dashboard-widget' },
                 { text: 'Hook 系统（拦截启动器方法）', link: '/plugins/hooks' },
                 { text: '主题系统', link: '/plugins/theme' }
               ]
