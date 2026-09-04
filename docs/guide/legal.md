@@ -183,6 +183,7 @@ Qomicex Launcher（以下简称"本软件"）由 Qomicex 团队开发并维护�
 | [BMCLAPI (bangbang93)](https://bmclapi2.bangbang93.com) | 下载镜像服务 |
 | [MC百科 (mcmod.cn)](https://www.mcmod.cn) | 中文 Mod 数据库 |
 | [Minecraft 官网](https://www.minecraft.net) | 官方网站，支持正版 |
+| [xphost008](https://github.com/xphost008) | 启动流程参考教程 |
 
 ## 参考项目
 
@@ -190,4 +191,4 @@ Qomicex Launcher（以下简称"本软件"）由 Qomicex 团队开发并维护�
 | :--- | :--- |
 | [HMCL](https://github.com/HMCL-dev/HMCL) | 版本检测参考 |
 | [ProjBobcat](https://github.com/Corona-Studio/ProjBobcat) | ModLoader 安装器参考 |
-| [PCL](https://github.com/Meloong-Git/PCL) | 启动流程参考 |
+| [PCL-CE](https://github.com/PCL-Community/PCL2-CE) | 模组中文名数据文件来源 |
