@@ -96,6 +96,7 @@ export default defineConfig({
                 { text: 'L4 远程 WebView', link: '/plugins/webview-l4' },
                 { text: '悬浮窗开发', link: '/plugins/overlay' },
                 { text: '主页小组件（dashboard:widgets）', link: '/plugins/dashboard-widget' },
+                { text: '插件设置页（settingsPages）', link: '/plugins/settings-page' },
                 { text: 'Hook 系统（拦截启动器方法）', link: '/plugins/hooks' },
                 { text: '主题系统', link: '/plugins/theme' }
               ]
