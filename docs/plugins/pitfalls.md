@@ -88,7 +88,7 @@ await __PLUGIN_API__.proxyFetchStream(req, {
 
 - `minLauncherVersion` 当前**未校验**，但请填写以兼容未来
 - 后端对 `permissions` 仅存储不校验；**前端运行时**按 `METHOD_PERMISSIONS` 表校验，manifest 缺权限 → API 调用报 `Permission denied`
-- `contributes.commands` 用于注册键盘快捷键（如 `devtools:toggle`），见 `PluginEventBridge.tsx`；`downloadSources` / `settingsPages` 当前**未使用**，勿依赖
+- `contributes.commands` 用于注册键盘快捷键（如 `devtools:toggle`），见 `PluginEventBridge.tsx`；`downloadSources` 当前**未使用**，勿依赖；`settingsPages` 已实装（「设置 → 插件 → 插件设置」，见 [manifest](./manifest#settingspages-数组)）
 - 安装接口（upload）不做依赖检查；目录安装（install）才检查必装依赖
 
 ## 后端行为

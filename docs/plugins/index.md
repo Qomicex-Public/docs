@@ -12,6 +12,7 @@ Qomicex 插件（`.qplugin`）本质是一个 **ZIP 压缩包**，内含一份 `
 |------|------|
 | 注入侧边栏 | 通过 `contributes.menuItems` 在侧边栏底部创建入口（跳转页面或打开悬浮窗） |
 | 主页小组件 | 通过 `contributes.slots` 声明 `dashboard:widgets` 槽位，把 UI 加入主页可编辑组件网格 |
+| 插件设置页 | 通过 `contributes.settingsPages` 声明，设置界面统一收进「设置 → 插件 → 插件设置」 |
 | 悬浮窗 | 通过 `contributes.overlay` 声明，创建可拖拽的独立小窗口 |
 | 插件页面 | 通过 `entry.frontend` 提供完整页面，挂载到 `/plugins/p/:id` |
 | 配置读写 | 读写插件自己的 `settings.json`（`getSettings` / `setSettings`） |
@@ -46,6 +47,7 @@ Qomicex 插件（`.qplugin`）本质是一个 **ZIP 压缩包**，内含一份 `
 - [L4 远程 WebView](./webview-l4)
 - [悬浮窗开发](./overlay)
 - [主页小组件（dashboard:widgets）](./dashboard-widget)
+- [插件设置页（settingsPages）](./settings-page)
 - [Hook 系统（拦截启动器方法）](./hooks)
 - [主题系统](./theme)
 

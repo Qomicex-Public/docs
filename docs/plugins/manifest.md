@@ -124,9 +124,7 @@
 
 - 每个路径是 `.qplugin` 包内 HTML 文件的相对路径；插件停用后对应 tab 自动消失
 - 启动器在「设置 → 插件 → 插件设置」为每个路径渲染一个 tab（左侧纵向 tab 逐插件列出，右侧 iframe 沙箱，与插件页相同的 `__PLUGIN_API__` 桥）
-- 设置 HTML 内用 `__PLUGIN_API__.call('getSettings'/'setSettings', ...)` 读写插件配置（持久化到 `plugins/{id}/settings.json`）
-- 插件可用 `openPluginSettings` API 一键跳转到本插件的设置 tab（见 [插件 API](./plugin-api#openpluginsettings--打开插件设置页)）
-- 同插件声明多个路径会生成多个 tab（标签为 `插件名 1`、`插件名 2`…）
+- 完整开发指南（设置 HTML 写法、getSettings/setSettings 用法、openPluginSettings 跳转、生命周期规则）见 [插件设置页](./settings-page)
 
 ### icon 写法示例
 
