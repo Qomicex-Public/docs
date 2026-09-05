@@ -76,7 +76,7 @@
 | `slots` | PluginSlotContribution[] | 主界面槽位注入：`header:right`（标题栏右侧）/ `dashboard:widgets`（主页小组件网格）。详见 [主页小组件](./dashboard-widget) |
 | `downloadSources` | string[] | 保留，当前未使用 |
 | `commands` | string[] | 保留，当前未使用 |
-| `settingsPages` | string[] | 保留，当前未使用 |
+| `settingsPages` | string[] | 插件设置页：包内 HTML 相对路径列表（如 `"dist/settings.html"`），在「设置 → 插件 → 插件设置」为每个路径生成一个纵向 tab。详见 [settingsPages 数组](#settingspages-数组) |
 | `iconTheme` | string | 图标主题：`.qtheme` 包内 `icon-theme.json` 的相对路径（如 `"dist/icon-theme.json"`），激活时经主题管理器注册。详见 [主题系统](./theme#图标主题icon-themejson) |
 | `fontLinks` | string[] | 字体/连字贡献：字体 CSS/CDN URL 列表，激活时自动注入 `<link rel="stylesheet">`，停用时移除。详见 [字体/连字贡献](./theme#字体连字贡献) |
 | `hooks` | PluginHookDecl[] | 声明可被本插件 hook 的启动器方法。需同时声明 `hook:register` 权限。详见 [Hook 系统](./hooks) |
@@ -109,6 +109,24 @@
 | `label` | string | 入口显示文字 |
 | `icon` | string | 入口图标。支持三种写法：① emoji / 纯文本（如 `"🛠"`、`"A"`）；② 绝对 URL（如 `"https://example.com/icon.png"`）；③ 包内相对路径（如 `"dist/icon.svg"`，启动器会自动解析为文件地址） |
 | `action` | string | `"page"`（默认，跳转页面）或 `"overlay"`（打开悬浮窗，需配合 `overlay` 配置） |
+
+### settingsPages 数组
+
+把插件的设置界面统一收进启动器，避免设置入口散落在各处。
+
+```json
+{
+  "contributes": {
+    "settingsPages": ["dist/settings.html"]
+  }
+}
+```
+
+- 每个路径是 `.qplugin` 包内 HTML 文件的相对路径；插件停用后对应 tab 自动消失
+- 启动器在「设置 → 插件 → 插件设置」为每个路径渲染一个 tab（左侧纵向 tab 逐插件列出，右侧 iframe 沙箱，与插件页相同的 `__PLUGIN_API__` 桥）
+- 设置 HTML 内用 `__PLUGIN_API__.call('getSettings'/'setSettings', ...)` 读写插件配置（持久化到 `plugins/{id}/settings.json`）
+- 插件可用 `openPluginSettings` API 一键跳转到本插件的设置 tab（见 [插件 API](./plugin-api#openpluginsettings--打开插件设置页)）
+- 同插件声明多个路径会生成多个 tab（标签为 `插件名 1`、`插件名 2`…）
 
 ### icon 写法示例
 

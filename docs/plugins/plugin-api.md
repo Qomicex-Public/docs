@@ -446,6 +446,22 @@ await __PLUGIN_API__.call('navigate', '/settings')
 - 权限：`config:read`
 - 注意：应使用启动器内部路由，勿用外部 URL
 
+### openPluginSettings — 打开插件设置页
+
+跳转到「设置 → 插件 → 插件设置」并定位到指定插件的设置 tab。适合在插件页面 / 悬浮窗里提供"设置"按钮。
+
+```js
+// 定位到本插件的设置 tab
+await __PLUGIN_API__.call('openPluginSettings')
+
+// 定位到指定插件的设置 tab
+await __PLUGIN_API__.call('openPluginSettings', 'top.qomicex.weather')
+```
+- 权限：`config:read`
+- 参数：`(targetPluginId?: string)`，缺省定位到**当前插件**
+- 目标插件须在 manifest 声明 `contributes.settingsPages` 才有对应 tab（见 [manifest](./manifest#settingspages-数组)）；目标无设置页时仍会打开插件设置区，停留在默认位置
+- 同插件有多个设置页时定位到第一个
+
 ### showToast — 应用内通知
 
 弹出一条 toast 提示。
