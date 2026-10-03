@@ -22,6 +22,7 @@
 - [运行中](./running)
 - [日志分析](./log-analysis)
 - [插件系统](./plugins)
+- [外部唤起](./deep-link)
 
 **设置与网络**
 

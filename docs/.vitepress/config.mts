@@ -47,7 +47,8 @@ export default defineConfig({
             { text: '多人联机', link: '/guide/connect' },
             { text: '运行中', link: '/guide/running' },
             { text: '日志分析', link: '/guide/log-analysis' },
-            { text: '插件系统', link: '/guide/plugins' }
+            { text: '插件系统', link: '/guide/plugins' },
+            { text: '外部唤起（qomicex-launcher://）', link: '/guide/deep-link' }
           ]
         },
         {
