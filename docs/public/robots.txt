@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# 文档站的构建产物 sitemap（由 config.mts 的 sitemap.hostname 生成）
+Sitemap: https://docs.qomicex.top/sitemap.xml

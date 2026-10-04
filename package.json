@@ -5,7 +5,9 @@
   "scripts": {
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
-    "docs:preview": "vitepress preview docs"
+    "docs:preview": "vitepress preview docs",
+    "seo:verify": "node scripts/verify-seo.mjs",
+    "indexnow": "node scripts/indexnow.mjs --host docs.qomicex.top --key eb436726f06a39424dae0773d034c5a0 --sitemap https://docs.qomicex.top/sitemap.xml"
   },
   "devDependencies": {
     "vitepress": "^1.6.0"

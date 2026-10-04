@@ -1,7 +1,9 @@
 import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
 
-const EXCLUDE_DIRS = new Set(['.vitepress', 'public', 'node_modules'])
+// junsi-dev-docs 为内部决策记录（ADR），不作为公开页面发布，
+// 也不应进入供外部读取的 docs.json 索引（与 config.mts 的 srcExclude 保持一致）。
+const EXCLUDE_DIRS = new Set(['.vitepress', 'public', 'node_modules', 'junsi-dev-docs'])
 const ROOT_CATEGORY = 'root'
 
 function walk(dir, base, out) {

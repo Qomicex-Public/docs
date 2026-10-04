@@ -1,12 +1,54 @@
 import { defineConfig } from 'vitepress'
 import { generateDocsIndex } from '../../scripts/generate-docs-index.mjs'
+import { SITE_ORIGIN, derivePageSeo, structuredData, escapeAttr } from './seo.mjs'
 
 export default defineConfig({
   lang: 'zh-CN',
   title: 'QML Docs',
   description: 'QML 用户手册与插件开发指南',
   lastUpdated: true,
-  head: [['link', { rel: 'icon', href: '/logo.svg', type: 'image/svg+xml' }]],
+  // 内部开发文档（ADR 等）位于 docs/junsi-dev-docs，不应作为公开页面构建与收录。
+  // 注意 VitePress 的 srcDir 就是 docs/，不排除的话这些 .md 会被当成正常页面发布。
+  srcExclude: ['junsi-dev-docs/**'],
+  // 站点地图：补齐缺失项，让 Bing 能发现全部文档页（Bing 指南 §2/§3）
+  sitemap: { hostname: SITE_ORIGIN },
+  head: [
+    ['link', { rel: 'icon', href: '/logo.svg', type: 'image/svg+xml' }],
+    ['meta', { name: 'author', content: 'Qomicex' }],
+    ['meta', { property: 'og:site_name', content: 'QML Docs' }],
+    ['meta', { property: 'og:type', content: 'article' }],
+    ['meta', { property: 'og:locale', content: 'zh_CN' }],
+    ['meta', { property: 'og:image', content: `${SITE_ORIGIN}/logo.svg` }],
+    ['meta', { name: 'twitter:card', content: 'summary' }],
+  ],
+  // 逐页独立 title / description；titleTemplate:false 抑制默认的 " | QML Docs" 追加，
+  // 避免与已含品牌后缀的完整标题重复。
+  transformPageData(pageData) {
+    const seo = derivePageSeo(pageData)
+    return { title: seo.title, description: seo.description, titleTemplate: false }
+  },
+  // canonical + robots + JSON-LD：静态注入 HTML head。
+  // 注意：VitePress 不转义 HeadConfig 属性值，必须自行 escapeAttr，
+  // 否则描述中的 ASCII 双引号会提前闭合 content="..."。
+  transformHead({ pageData }) {
+    const seo = derivePageSeo(pageData)
+    const head = [
+      ['link', { rel: 'canonical', href: seo.url }],
+      ['meta', { property: 'og:url', content: escapeAttr(seo.url) }],
+      ['meta', { property: 'og:title', content: escapeAttr(seo.title) }],
+      ['meta', { property: 'og:description', content: escapeAttr(seo.description) }],
+    ]
+    if (seo.isNotFound) {
+      head.push(['meta', { name: 'robots', content: 'noindex, follow' }])
+    } else {
+      head.push(['meta', { name: 'robots', content: 'index, follow, max-image-preview:large' }])
+      const ld = structuredData(seo)
+      if (ld) {
+        head.push(['script', { type: 'application/ld+json' }, JSON.stringify(ld)])
+      }
+    }
+    return head
+  },
   buildEnd(siteConfig) {
     generateDocsIndex(siteConfig.srcDir, siteConfig.outDir, {
       guide: '使用指南',
